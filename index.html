@@ -618,23 +618,9 @@ async function webSearchProperties(intent, key){
 }
 
 async function webSearchViaGeminiGrounding(intent, key, queries){
-  let model = localStorage.getItem("ii_model") || "gemini-3.1-flash-lite-preview";
-  if(/2\.5-flash/i.test(model)) model = "gemini-3.1-flash-lite-preview";
-  try {
-    const available = await listGeminiModels(key);
-    const preferSaved = available.filter(function(n){
-      const clean = n.replace(/^models\//, "");
-      return clean === model || n === model;
-    });
-    const flash = available.filter(function(n){
-      return /flash/i.test(n) && !/image|tts|live|embed|2\.5-flash/i.test(n);
-    });
-    if(preferSaved.length) model = preferSaved[0].replace(/^models\//, "");
-    else if(flash.length) model = flash[0].replace(/^models\//, "");
-    else if(available.length) model = available[0].replace(/^models\//, "");
-  } catch(e) {}
-  if(/2\.5-flash/i.test(model)) model = "gemini-3.1-flash-lite-preview";
-
+  const pick = await pickBestGeminiModel(key, localStorage.getItem("ii_model") || "");
+  let model = pick.model;
+  if(!model) throw new Error("Nenhum modelo Gemini disponível para busca web.");
   const prompt = [
     "Voce extrai anuncios imobiliarios REAIS da web.",
     "Use Google Search para achar imoveis a VENDA no Guaruja (SP).",
@@ -776,36 +762,72 @@ async function webSearchViaJina(intent, queries){
 }
 
 
-const GEMINI_MODELS = [
-  "gemini-3.1-flash-lite-preview",
-  "gemini-flash-lite-latest",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-3.8-flash",
-  "gemini-3.7-flash",
-  "gemini-2.0-flash"
-];
+
+/* ========== Gemini: descoberta automática de modelo (padrão RadarImob) ========== */
+function isTextGenerateModel(name){
+  if(!name) return false;
+  const n = String(name).replace(/^models\//, "");
+  if(/image|tts|embed|audio|vision|robotics|computer|imagen|veo|live/i.test(n)) return false;
+  return true;
+}
+
+function scoreGeminiModel(name){
+  const n = String(name).toLowerCase();
+  let s = 0;
+  if(/flash/i.test(n)) s += 100;
+  if(/lite/i.test(n)) s += 20;
+  if(/latest/i.test(n)) s += 10;
+  if(/pro/i.test(n)) s += 5;
+  if(/preview/i.test(n)) s += 2;
+  // prefer shorter stable aliases slightly less than flash
+  return s;
+}
 
 async function listGeminiModels(key){
   const url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key) + "&pageSize=200";
   const res = await fetch(url);
   const body = await res.text();
   if(!res.ok){
-    if(res.status === 400 || res.status === 401 || res.status === 403)
-      throw new Error("Chave inválida ou sem acesso (HTTP " + res.status + "). Gere em aistudio.google.com/apikey");
-    throw new Error("Não consegui listar modelos (HTTP " + res.status + ")");
+    const err = new Error("Listagem de modelos HTTP " + res.status);
+    err.status = res.status;
+    err.body = body.substring(0, 200);
+    throw err;
   }
   const data = JSON.parse(body);
   const out = [];
   (data.models || []).forEach(function(m){
     const name = (m.name || "").replace(/^models\//, "");
-    if(!name) return;
+    if(!isTextGenerateModel(name)) return;
     const actions = m.supportedGenerationMethods || m.supported_actions || [];
-    // Keep generateContent models; if API omits methods, keep name anyway (except pure embed)
-    if(/embed/i.test(name)) return;
-    if(actions.length === 0 || actions.indexOf("generateContent") >= 0) out.push(name);
+    if(actions.length && actions.indexOf("generateContent") < 0) return;
+    out.push(name);
   });
+  out.sort(function(a,b){ return scoreGeminiModel(b) - scoreGeminiModel(a); });
   return out;
+}
+
+/** Descobre e grava o melhor modelo da chave. Sem hard-code obrigatório. */
+async function pickBestGeminiModel(key, preferred){
+  const saved = preferred || localStorage.getItem("ii_model") || "";
+  let available = [];
+  try {
+    available = await listGeminiModels(key);
+  } catch(e) {
+    console.warn("listGeminiModels falhou:", e);
+  }
+
+  if(available.length){
+    let chosen = null;
+    if(saved && available.indexOf(saved) >= 0) chosen = saved;
+    else chosen = available[0]; // already sorted: flash first
+    localStorage.setItem("ii_model", chosen);
+    return { model: chosen, available: available, source: "list" };
+  }
+
+  // Fallback aliases only if listagem falhou (rede/CORS/API)
+  const aliases = [saved, "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.0-flash", "gemini-pro"]
+    .filter(function(m,i,a){ return m && a.indexOf(m) === i; });
+  return { model: aliases[0] || "", available: aliases, source: "alias-fallback", aliases: aliases };
 }
 
 async function callGeminiRaw(key, model, prompt, jsonMode){
@@ -814,7 +836,7 @@ async function callGeminiRaw(key, model, prompt, jsonMode){
   async function once(useJson){
     const body = {
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+      generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
     };
     if(useJson) body.generationConfig.responseMimeType = "application/json";
     const res = await fetch(url, {
@@ -826,15 +848,15 @@ async function callGeminiRaw(key, model, prompt, jsonMode){
     if(!res.ok){
       const err = new Error("Gemini HTTP " + res.status + " (" + model + ")");
       err.status = res.status;
-      err.body = errText.substring(0, 240);
+      err.body = errText.substring(0, 220);
       throw err;
     }
     const data = JSON.parse(errText);
-    const parts = ((((data.candidates || [])[0] || {}).content || {}).parts || []);
-    return ((parts[0] || {}).text || "").trim();
+    const cand = (data.candidates || [])[0] || {};
+    const parts = ((cand.content || {}).parts || []);
+    return (parts.map(function(pt){ return pt.text || ""; }).join("") || "").trim();
   }
 
-  // JSON mode can return 400 on some models — retry without it
   if(jsonMode){
     try { return await once(true); }
     catch(e){
@@ -846,29 +868,19 @@ async function callGeminiRaw(key, model, prompt, jsonMode){
 }
 
 async function callGeminiWithFallback(key, preferred, prompt, jsonMode){
-  let available = [];
-  try { available = await listGeminiModels(key); } catch(e){ console.warn("list models:", e); }
-
-  // Prefer only models the key actually has
-  const flashFirst = available.filter(function(n){
-    return /flash/i.test(n) && !/image|tts|live|embed|vision|audio|robotics|computer/i.test(n);
-  });
-  const textModels = available.filter(function(n){
-    return !/image|tts|live|embed|vision|audio|robotics|computer/i.test(n);
-  });
-
-  let list;
-  if(available.length){
-    list = [];
-    if(preferred && available.indexOf(preferred) >= 0) list.push(preferred);
-    list = list.concat(flashFirst).concat(textModels);
+  const pick = await pickBestGeminiModel(key, preferred);
+  let list = [];
+  if(pick.source === "list"){
+    list = pick.available.slice();
+    // put chosen first
+    if(pick.model){
+      list = [pick.model].concat(list.filter(function(m){ return m !== pick.model; }));
+    }
   } else {
-    // list failed — try a few current aliases only
-    list = [preferred, "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.0-flash"].filter(Boolean);
+    list = (pick.aliases || pick.available || []).slice();
   }
   list = list.filter(function(m,i,a){ return m && a.indexOf(m) === i; });
-
-  if(!list.length) throw new Error("Nenhum modelo de texto disponível nesta chave. Verifique em aistudio.google.com");
+  if(!list.length) throw new Error("Nenhum modelo disponível para esta chave.");
 
   const tried = [];
   let lastErr = null;
@@ -878,26 +890,30 @@ async function callGeminiWithFallback(key, preferred, prompt, jsonMode){
     try {
       const text = await callGeminiRaw(key, model, prompt, jsonMode);
       localStorage.setItem("ii_model", model);
-      return { text: text, model: model };
+      return { text: text, model: model, tried: tried, available: pick.available };
     } catch(e){
       lastErr = e;
       if(e.status === 401 || e.status === 403)
         throw new Error("Chave inválida ou sem permissão (HTTP " + e.status + "). Gere em aistudio.google.com/apikey");
       if(e.status === 429)
         throw new Error("Limite da API (429). Aguarde e tente de novo.");
-      // 400/404 → next model
       continue;
     }
   }
   const detail = (lastErr && lastErr.body) ? (" | " + lastErr.body) : "";
-  throw new Error((lastErr && lastErr.message ? lastErr.message : "Falha Gemini") + " | Tentados: " + tried.slice(0, 8).join(", ") + detail);
+  throw new Error(
+    (lastErr && lastErr.message ? lastErr.message : "Falha Gemini") +
+    " | Tentados: " + tried.join(", ") + detail
+  );
 }
 
 async function extractAI(message){
   const provider = localStorage.getItem("ii_provider") || "local";
   const key = localStorage.getItem("ii_key") || "";
   if(provider !== "gemini" || !key) return parseIntent(message);
-  const preferred = localStorage.getItem("ii_model") || "gemini-3.5-flash";
+
+  // Sempre revalida/descobre modelo antes de gerar
+  const preferred = localStorage.getItem("ii_model") || "";
   const prompt = [
     "Extraia intenção de compra imobiliária em Guarujá. NÃO invente dados.",
     "Mensagem: " + message,
@@ -905,29 +921,20 @@ async function extractAI(message){
     "objetivo (morar|investir), tipo_imovel, orcamento_maximo (número), dormitorios_min,",
     "condominio_max (número), distancia_praia_ambigua (bool), distancia_praia_max_metros,",
     "regioes_preferidas (array de {bairro,peso}), raw_summary."
-  ].join("\n");
+  ].join("\\n");
   const result = await callGeminiWithFallback(key, preferred, prompt, true);
   let j;
   try {
-    j = JSON.parse(result.text.replace(/^```json\s*/i,"").replace(/```$/,""));
+    j = JSON.parse(result.text.replace(/^```json\\s*/i,"").replace(/```$/,""));
   } catch(e) {
     const s = result.text.indexOf("{");
     const e2 = result.text.lastIndexOf("}");
-    if(s >= 0 && e2 > s) j = JSON.parse(result.text.substring(s, e2+1));
+    if(s >= 0 && e2 > s) j = JSON.parse(result.text.substring(s, e2 + 1));
     else throw new Error("JSON inválido da IA");
   }
   return Object.assign({}, parseIntent(message), j, { raw_summary: j.raw_summary || message });
 }
 
-
-function addBubble(text, role){
-  const d=document.createElement("div");
-  d.className="bubble "+role;
-  d.textContent=text;
-  $("#msgs").appendChild(d);
-  $("#msgs").scrollTop=$("#msgs").scrollHeight;
-  return d;
-}
 
 function renderCards(recs){
   const box = $("#results");
@@ -1140,22 +1147,22 @@ $("#testAI").onclick=async()=>{
   try{
     localStorage.setItem("ii_provider","gemini");
     localStorage.setItem("ii_key",key);
-    let discovered=[];
-    try{ discovered=await listGeminiModels(key); }catch(e){ console.warn(e); }
-    let preferred=$("#aiModel").value.trim();
-    const flash=discovered.filter(function(n){ return /flash/i.test(n) && !/image|tts|live|embed/i.test(n); });
-    if(!preferred && flash.length) preferred=flash[0];
-    else if(!preferred && discovered.length) preferred=discovered[0];
-    if(preferred) localStorage.setItem("ii_model", preferred);
-    if(!discovered.length){
-      $("#aiStatus").textContent="Aviso: não listei modelos (rede/chave). Tentando mesmo assim…";
+    // clear stale hard-coded model so discovery wins
+    const manual=$("#aiModel").value.trim();
+    if(manual) localStorage.setItem("ii_model", manual);
+    else localStorage.removeItem("ii_model");
+
+    const pick=await pickBestGeminiModel(key, localStorage.getItem("ii_model")||"");
+    if(pick.source==="list" && pick.available.length){
+      $("#aiStatus").textContent="Modelos na chave: "+pick.available.length+" — testando "+pick.model+"…";
     } else {
-      $("#aiStatus").textContent="Testando "+(preferred||"?")+" ("+discovered.length+" modelos)…";
+      $("#aiStatus").textContent="Listagem indisponível — tentando aliases: "+(pick.aliases||[]).join(", ");
     }
+
     const r=await extractAI("Quero apartamento no Guarujá até 400 mil 4 quartos");
-    const used=localStorage.getItem("ii_model")||preferred||"?";
+    const used=localStorage.getItem("ii_model")||pick.model||"?";
     $("#aiModel").value=used;
-    $("#aiStatus").textContent="OK — usando: "+used+" | orçamento: "+(r.orcamento_maximo||"?")+(discovered.length?(" | "+discovered.length+" modelos"):"");
+    $("#aiStatus").textContent="✓ OK — usando: "+used+(pick.source==="list"?(" ("+pick.available.length+" modelos)"):"");
     $("#aiStatus").style.color="var(--green)";
   }catch(e){
     $("#aiStatus").textContent="Erro: "+e.message;
