@@ -787,7 +787,7 @@ const GEMINI_MODELS = [
 ];
 
 async function listGeminiModels(key){
-  const url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key) + "&pageSize=100";
+  const url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key) + "&pageSize=200";
   const res = await fetch(url);
   const body = await res.text();
   if(!res.ok){
@@ -799,8 +799,10 @@ async function listGeminiModels(key){
   const out = [];
   (data.models || []).forEach(function(m){
     const name = (m.name || "").replace(/^models\//, "");
-    const actions = m.supportedGenerationMethods || m.supported_actions || [];
     if(!name) return;
+    const actions = m.supportedGenerationMethods || m.supported_actions || [];
+    // Keep generateContent models; if API omits methods, keep name anyway (except pure embed)
+    if(/embed/i.test(name)) return;
     if(actions.length === 0 || actions.indexOf("generateContent") >= 0) out.push(name);
   });
   return out;
@@ -808,39 +810,69 @@ async function listGeminiModels(key){
 
 async function callGeminiRaw(key, model, prompt, jsonMode){
   const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(key);
-  const body = {
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
-  };
-  if(jsonMode) body.generationConfig.responseMimeType = "application/json";
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify(body)
-  });
-  const errText = await res.text();
-  if(!res.ok){
-    const err = new Error("Gemini HTTP " + res.status + " (" + model + ")");
-    err.status = res.status;
-    err.body = errText.substring(0, 200);
-    throw err;
+
+  async function once(useJson){
+    const body = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+    };
+    if(useJson) body.generationConfig.responseMimeType = "application/json";
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const errText = await res.text();
+    if(!res.ok){
+      const err = new Error("Gemini HTTP " + res.status + " (" + model + ")");
+      err.status = res.status;
+      err.body = errText.substring(0, 240);
+      throw err;
+    }
+    const data = JSON.parse(errText);
+    const parts = ((((data.candidates || [])[0] || {}).content || {}).parts || []);
+    return ((parts[0] || {}).text || "").trim();
   }
-  const data = JSON.parse(errText);
-  const parts = ((((data.candidates || [])[0] || {}).content || {}).parts || []);
-  return ((parts[0] || {}).text || "").trim();
+
+  // JSON mode can return 400 on some models — retry without it
+  if(jsonMode){
+    try { return await once(true); }
+    catch(e){
+      if(e.status === 400 || e.status === 404) return await once(false);
+      throw e;
+    }
+  }
+  return await once(false);
 }
 
 async function callGeminiWithFallback(key, preferred, prompt, jsonMode){
   let available = [];
-  try { available = await listGeminiModels(key); } catch(e){ console.warn(e); }
-  const flashFirst = available.filter(function(n){ return /flash/i.test(n) && !/image|tts|live|embed|2\.5-flash/i.test(n); });
-  const preferredSafe = (preferred && !/2\.5-flash/i.test(preferred)) ? preferred : "gemini-3.1-flash-lite-preview";
-  const list = [preferredSafe].concat(flashFirst).concat(available).concat(GEMINI_MODELS)
-    .filter(function(m,i,a){ return m && a.indexOf(m) === i && !/2\.5-flash$/i.test(m); });
-  if(!list.length) throw new Error("Nenhum modelo disponível nesta chave.");
+  try { available = await listGeminiModels(key); } catch(e){ console.warn("list models:", e); }
+
+  // Prefer only models the key actually has
+  const flashFirst = available.filter(function(n){
+    return /flash/i.test(n) && !/image|tts|live|embed|vision|audio|robotics|computer/i.test(n);
+  });
+  const textModels = available.filter(function(n){
+    return !/image|tts|live|embed|vision|audio|robotics|computer/i.test(n);
+  });
+
+  let list;
+  if(available.length){
+    list = [];
+    if(preferred && available.indexOf(preferred) >= 0) list.push(preferred);
+    list = list.concat(flashFirst).concat(textModels);
+  } else {
+    // list failed — try a few current aliases only
+    list = [preferred, "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.0-flash"].filter(Boolean);
+  }
+  list = list.filter(function(m,i,a){ return m && a.indexOf(m) === i; });
+
+  if(!list.length) throw new Error("Nenhum modelo de texto disponível nesta chave. Verifique em aistudio.google.com");
+
   const tried = [];
   let lastErr = null;
-  for(let i=0;i<list.length;i++){
+  for(let i = 0; i < list.length; i++){
     const model = list[i];
     tried.push(model);
     try {
@@ -850,13 +882,15 @@ async function callGeminiWithFallback(key, preferred, prompt, jsonMode){
     } catch(e){
       lastErr = e;
       if(e.status === 401 || e.status === 403)
-        throw new Error("Chave inválida ou sem permissão (HTTP " + e.status + ").");
+        throw new Error("Chave inválida ou sem permissão (HTTP " + e.status + "). Gere em aistudio.google.com/apikey");
       if(e.status === 429)
         throw new Error("Limite da API (429). Aguarde e tente de novo.");
+      // 400/404 → next model
       continue;
     }
   }
-  throw new Error((lastErr && lastErr.message ? lastErr.message : "Falha Gemini") + " | Tentados: " + tried.slice(0,10).join(", "));
+  const detail = (lastErr && lastErr.body) ? (" | " + lastErr.body) : "";
+  throw new Error((lastErr && lastErr.message ? lastErr.message : "Falha Gemini") + " | Tentados: " + tried.slice(0, 8).join(", ") + detail);
 }
 
 async function extractAI(message){
@@ -1106,21 +1140,22 @@ $("#testAI").onclick=async()=>{
   try{
     localStorage.setItem("ii_provider","gemini");
     localStorage.setItem("ii_key",key);
-    let preferred=$("#aiModel").value.trim();
     let discovered=[];
-    try{
-      discovered=await listGeminiModels(key);
-      const flash=discovered.filter(function(n){ return /flash/i.test(n) && !/image|tts|live|embed|2\.5-flash/i.test(n); });
-      if(!preferred && flash.length) preferred=flash[0];
-      else if(!preferred && discovered.length) preferred=discovered[0];
-    }catch(e){ console.warn(e); }
-    if(!preferred) preferred="gemini-3.1-flash-lite-preview";
-    localStorage.setItem("ii_model", preferred);
+    try{ discovered=await listGeminiModels(key); }catch(e){ console.warn(e); }
+    let preferred=$("#aiModel").value.trim();
+    const flash=discovered.filter(function(n){ return /flash/i.test(n) && !/image|tts|live|embed/i.test(n); });
+    if(!preferred && flash.length) preferred=flash[0];
+    else if(!preferred && discovered.length) preferred=discovered[0];
+    if(preferred) localStorage.setItem("ii_model", preferred);
+    if(!discovered.length){
+      $("#aiStatus").textContent="Aviso: não listei modelos (rede/chave). Tentando mesmo assim…";
+    } else {
+      $("#aiStatus").textContent="Testando "+(preferred||"?")+" ("+discovered.length+" modelos)…";
+    }
     const r=await extractAI("Quero apartamento no Guarujá até 400 mil 4 quartos");
-    const used=localStorage.getItem("ii_model")||preferred;
+    const used=localStorage.getItem("ii_model")||preferred||"?";
     $("#aiModel").value=used;
-    const tip=discovered.length ? (" | " + discovered.length + " modelos na chave") : "";
-    $("#aiStatus").textContent="OK — usando: "+used+" | orçamento: "+(r.orcamento_maximo||"?")+tip;
+    $("#aiStatus").textContent="OK — usando: "+used+" | orçamento: "+(r.orcamento_maximo||"?")+(discovered.length?(" | "+discovered.length+" modelos"):"");
     $("#aiStatus").style.color="var(--green)";
   }catch(e){
     $("#aiStatus").textContent="Erro: "+e.message;
