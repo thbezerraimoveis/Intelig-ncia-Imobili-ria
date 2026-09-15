@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inteligência Imobiliária — Guarujá</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --panel: #111827;
+      --card: #1a2332;
+      --card2: #1f2a3d;
+      --border: #243044;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --dim: #64748b;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --grad: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app { min-height: 100vh; display: flex; flex-direction: column; }
+    .top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--panel);
+      gap: 12px; flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px; background: var(--grad);
+      display: flex; align-items: center; justify-content: center; font-size: 16px;
+    }
+    .brand h1 { font-size: 14px; font-weight: 600; line-height: 1.25; }
+    .brand span { display: block; font-size: 11px; color: var(--dim); font-weight: 400; }
+    .top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      border: none; cursor: pointer; font-family: inherit; font-weight: 600; font-size: 13px;
+      border-radius: 10px; padding: 10px 16px; transition: .15s;
+    }
+    .btn-primary { background: var(--grad); color: #fff; }
+    .btn-primary:hover { opacity: .92; }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent; color: var(--muted); border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--blue); }
+    .btn-sm { padding: 7px 11px; font-size: 12px; background: var(--card2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+    .btn-sm:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-sm.ok { border-color: var(--green); color: var(--green); }
+    .btn-sm.no { border-color: var(--red); color: var(--red); }
+
+    .screen { flex: 1; display: none; }
+    .screen.on { display: flex; flex-direction: column; }
+
+    /* LANDING */
+    #landing {
+      align-items: center; justify-content: center; padding: 32px 20px;
+      background:
+        radial-gradient(ellipse at 15% 0%, rgba(59,130,246,.2), transparent 50%),
+        radial-gradient(ellipse at 90% 100%, rgba(139,92,246,.12), transparent 45%),
+        var(--bg);
+    }
+    .landing-box { max-width: 560px; width: 100%; }
+    .badge {
+      display: inline-block; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--blue); background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.3);
+      padding: 5px 10px; border-radius: 999px; margin-bottom: 16px;
+    }
+    .landing-box h2 {
+      font-size: clamp(1.55rem, 4vw, 2.1rem); font-weight: 700; letter-spacing: -.02em;
+      line-height: 1.25; margin-bottom: 12px;
+    }
+    .landing-box .sub { color: var(--muted); font-size: 15px; line-height: 1.55; margin-bottom: 24px; }
+    .start-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    .start-card label { display: block; font-size: 12px; color: var(--dim); margin-bottom: 8px; }
+    textarea, input[type=text], input[type=password] {
+      width: 100%; background: var(--panel); border: 1px solid var(--border); color: var(--text);
+      border-radius: 10px; padding: 12px 14px; font-size: 14px; font-family: inherit; outline: none;
+      resize: vertical; min-height: 88px;
+    }
+    textarea:focus, input:focus { border-color: var(--blue); }
+    .start-card .btn-primary { width: 100%; margin-top: 12px; padding: 12px; }
+
+    /* CHAT */
+    #chat { max-width: 760px; width: 100%; margin: 0 auto; height: calc(100vh - 62px); }
+    .chat-head {
+      display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+      border-bottom: 1px solid var(--border); background: var(--panel);
+    }
+    .pill {
+      font-size: 11px; color: var(--muted); background: var(--card2);
+      padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em;
+    }
+    .pill.go { color: var(--green); }
+    .pill.search { color: var(--yellow); }
+    .msgs {
+      flex: 1; overflow-y: auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .bubble {
+      max-width: 88%; padding: 12px 14px; border-radius: 14px; font-size: 14px;
+      line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    }
+    .bubble.user { align-self: flex-end; background: var(--blue); color: #fff; border-bottom-right-radius: 4px; }
+    .bubble.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .bubble.sys { align-self: center; color: var(--dim); font-size: 12px; background: transparent; padding: 4px; }
+    .bubble.load { align-self: flex-start; background: var(--card); border: 1px solid var(--border); color: var(--muted); }
+
+    .results { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .results-title { font-size: 13px; color: var(--muted); }
+    .pcard {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px; box-shadow: 0 8px 28px rgba(0,0,0,.25);
+    }
+    .pcard-top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .price { font-size: 1.25rem; font-weight: 700; color: var(--green); }
+    .score {
+      font-size: 12px; background: rgba(59,130,246,.15); color: var(--blue);
+      padding: 4px 10px; border-radius: 999px; height: fit-content; white-space: nowrap;
+    }
+    .meta { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .meta span::before { content: "· "; opacity: .5; }
+    .meta span:first-child::before { content: ""; }
+    .why {
+      background: var(--panel); border-radius: 10px; padding: 10px 12px; font-size: 13px; margin: 8px 0;
+    }
+    .why strong { display: block; font-size: 11px; color: var(--dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+    .src { font-size: 12px; color: var(--dim); margin-bottom: 10px; }
+    .src a { color: var(--blue); text-decoration: none; }
+    .src a:hover { text-decoration: underline; }
+    .actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .composer {
+      display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .composer input { min-height: auto; flex: 1; }
+    .composer .btn-primary { width: auto; min-width: 90px; }
+
+    /* MODAL */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+      width: 100%; max-width: 480px; padding: 24px; position: relative;
+    }
+    .modal h3 { font-size: 18px; margin-bottom: 6px; }
+    .modal p { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+    .modal label { display: block; font-size: 11px; color: var(--dim); margin: 10px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+    .modal input { min-height: 44px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+    .x {
+      position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer;
+    }
+
+    @media (max-width: 560px) {
+      .bubble { max-width: 94%; }
+      .chat-head strong { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <div class="logo">🏠</div>
+        <h1>Inteligência Imobiliária<span>Guarujá · MVP navegável</span></h1>
+      </div>
+      <div class="top-actions">
+        <button class="btn btn-ghost" type="button" id="btnAI">⚙ Configurar IA</button>
+        <button class="btn btn-ghost" type="button" id="btnHome">Início</button>
+      </div>
+    </header>
+
+    <section id="landing" class="screen on">
+      <div class="landing-box">
+        <div class="badge">Guarujá · SP · Busca web real (Gemini + Google)</div>
+        <h2>Encontre o imóvel certo<br>sem perder horas procurando.</h2>
+        <p class="sub">Conte o que você procura. A inteligência entende seu perfil e encontra as opções mais compatíveis.</p>
+        <div class="start-card">
+          <label for="startInput">O que você está procurando?</label>
+          <textarea id="startInput" placeholder="Ex.: Quero um apartamento no Guarujá até R$ 400 mil, quatro quartos e perto da praia."></textarea>
+          <button class="btn btn-primary" type="button" id="btnStart">Começar busca</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="chat" class="screen">
+      <div class="chat-head">
+        <button class="btn btn-ghost" type="button" id="btnBack" style="padding:6px 10px">←</button>
+        <div>
+          <strong>Consultor Imobiliário</strong>
+          <span class="pill" id="statusPill">conversando</span>
+        </div>
+      </div>
+      <div class="msgs" id="msgs"></div>
+      <div class="results" id="results" style="display:none"></div>
+      <form class="composer" id="form">
+        <input type="text" id="input" placeholder="Digite sua mensagem..." autocomplete="off" />
+        <button class="btn btn-primary" type="submit" id="btnSend">Enviar</button>
+      </form>
+    </section>
+  </div>
+
+  <div class="overlay" id="aiModal">
+    <div class="modal">
+      <button class="x" type="button" id="closeAI">×</button>
+      <h3>Configurar IA</h3>
+      <p>Opcional. Sem chave, o app usa interpretação local (já funciona no exemplo do Guarujá). Com Gemini, o app descobre sozinho os modelos da sua conta (3.5 / 3.8 Flash etc.). A chave fica só neste navegador.</p>
+      <label>Provedor</label>
+      <select id="aiProvider" style="width:100%;min-height:44px;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-family:inherit">
+        <option value="local">Local (sem API)</option>
+        <option value="gemini">Google Gemini</option>
+      </select>
+      <label>API Key (Gemini)</label>
+      <input type="password" id="aiKey" placeholder="AIza..." />
+      <label>Modelo (opcional — se der 404, deixe vazio e clique Testar)</label>
+      <input type="text" id="aiModel" placeholder="deixe vazio para auto" value="" style="min-height:44px" />
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="button" id="saveAI">Salvar</button>
+        <button class="btn btn-ghost" type="button" id="testAI">Testar</button>
+      </div>
+      <p id="aiStatus" style="margin-top:12px;font-size:13px;color:var(--dim)"></p>
+    </div>
+  </div>
+
+<script>
+/* Demo LISTINGS removed — real web search via Gemini Google Search grounding */
+const state = { buyerId: null, intent: {}, busy: false };
+
+function $(s){ return document.querySelector(s); }
+function money(v){ if(v==null||v===undefined||v==="") return "Não informado"; return "R$ "+Number(v).toLocaleString("pt-BR",{maximumFractionDigits:0}); }
+function setPill(t,c){ const p=$("#statusPill"); p.textContent=t; p.className="pill "+(c||""); }
+
+function parseIntent(msg){
+  const text = msg.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); // remove accents for matching
+  const raw = msg;
+  const d = { raw_summary: msg };
+
+  if(/investir|veraneio|temporada|renda/.test(text)) d.objetivo = "investir";
+  else if(/morar|resid/.test(text)) d.objetivo = "morar";
+  else if(/apartamento|apto|casa|imovel/.test(text)) d.objetivo = "morar";
+
+  if(/apartamento|apto/.test(text)) d.tipo_imovel = "apartamento";
+  else if(/casa/.test(text)) d.tipo_imovel = "casa";
+
+  // Budget: "450 mil", "ate uns 450 mil", "acima 450 mil", "r$ 450.000", "450000"
+  const budgetPatterns = [
+    /(?:ate|acima de|acima|ate uns|uns|por volta de|cerca de|no maximo|maximo|ate r\$|r\$)?\s*(?:de\s*)?(?:r\$\s*)?(\d{1,3}(?:\.\d{3})+|\d+)\s*(milhao|milhoes|mil)?/,
+    /(\d{1,3}(?:\.\d{3})+|\d+)\s*(milhao|milhoes|mil)/,
+    /(?:r\$\s*)(\d{1,3}(?:\.\d{3})+|\d{5,})/
+  ];
+  for(let i = 0; i < budgetPatterns.length; i++){
+    const pm = text.match(budgetPatterns[i]);
+    if(!pm) continue;
+    let numStr = pm[1].replace(/\./g, "");
+    let v = parseFloat(numStr);
+    const unit = pm[2] || "";
+    if(unit.indexOf("milh") >= 0) v *= 1e6;
+    else if(unit === "mil" || (unit === "" && v < 10000 && /mil/.test(text))) v *= 1000;
+    else if(unit === "" && v < 10000 && /(ate|acima|orcamento|investir|reais)/.test(text)) {
+      // "450" alone without mil is ambiguous — only accept if "mil" nearby
+      const near = text.substring(Math.max(0, (pm.index||0) - 10), (pm.index||0) + 20);
+      if(/mil/.test(near)) v *= 1000;
+      else if(v < 50000) continue;
+    }
+    if(v >= 50000 && v <= 5e7){ d.orcamento_maximo = v; break; }
+  }
+
+  // Bedrooms: "2 dormitorios", "dois quartos", "2 quartos"
+  const word = { um:1, dois:2, tres:3, quatro:4, cinco:5, seis:6 };
+  let m = text.match(/(\d+)\s*(?:quarto|dorm)/);
+  if(m) d.dormitorios_min = +m[1];
+  else {
+    m = text.match(/(um|dois|tres|quatro|cinco|seis)\s*(?:quarto|dorm)/);
+    if(m) d.dormitorios_min = word[m[1]];
+  }
+  if(d.dormitorios_min) d.dormitorios_ideal = d.dormitorios_min;
+
+  // Beach
+  if(/perto da praia|proximo a praia|proximo da praia|perto do mar|beira.?mar|frente.?mar/.test(text))
+    d.distancia_praia_ambigua = true;
+  if(/\b300\b/.test(text) && /praia|metro/.test(text)) { d.distancia_praia_max_metros = 300; d.distancia_praia_ambigua = false; }
+  if(/\b500\b/.test(text) && /praia|metro/.test(text)) { d.distancia_praia_max_metros = 500; d.distancia_praia_ambigua = false; }
+  if(/quadra da praia/.test(text)) { d.distancia_praia_max_metros = 100; d.distancia_praia_ambigua = false; }
+
+  // Condo
+  let cm = text.match(/condominio(?:\s+maximo)?(?:\s+de)?\s*(?:r\$\s*)?(\d[\d.]*)/);
+  if(cm){
+    let v = parseFloat(cm[1].replace(/\./g, ""));
+    if(v > 0 && v < 50000) d.condominio_max = v;
+  }
+
+  // Neighborhood
+  const bairros = [
+    ["asturias", "Astúrias"], ["astúrias", "Astúrias"],
+    ["enseada", "Enseada"], ["pitangueiras", "Pitangueiras"],
+    ["tombo", "Tombo"], ["pernambuco", "Pernambuco"]
+  ];
+  for(let bi = 0; bi < bairros.length; bi++){
+    if(text.indexOf(bairros[bi][0].normalize("NFD").replace(/[\u0300-\u036f]/g,"")) >= 0 || text.indexOf(bairros[bi][0]) >= 0){
+      d.regioes_preferidas = [{ bairro: bairros[bi][1], peso: 1 }];
+      break;
+    }
+  }
+
+  // User insisting they already gave budget
+  if(/ja (falei|disse|coloquei|informei)|voce nao viu|nao viu|ja tinha dito/.test(text)){
+    d._user_insists = true;
+  }
+
+  return d;
+}
+
+function summarizeIntent(intent){
+  const parts = [];
+  if(intent.tipo_imovel) parts.push(intent.tipo_imovel);
+  if(intent.objetivo) parts.push("para " + intent.objetivo);
+  if(intent.orcamento_maximo) parts.push("até " + money(intent.orcamento_maximo));
+  if(intent.dormitorios_min != null) parts.push(intent.dormitorios_min + " dorm(s)");
+  if(intent.regioes_preferidas && intent.regioes_preferidas[0])
+    parts.push(intent.regioes_preferidas[0].bairro || intent.regioes_preferidas[0]);
+  if(intent.distancia_praia_max_metros) parts.push("até " + intent.distancia_praia_max_metros + " m da praia");
+  else if(intent.distancia_praia_ambigua) parts.push("perto da praia");
+  if(intent.condominio_max) parts.push("cond. máx. R$ " + Number(intent.condominio_max).toLocaleString("pt-BR"));
+  return parts.length ? parts.join(" · ") : "ainda coletando critérios";
+}
+
+
+function completeness(intent){
+  const miss=[]; let score=0;
+  const W={objetivo:.2,orcamento:.25,regiao:.2,tipo:.15,tamanho:.2};
+  if(intent.objetivo) score+=W.objetivo; else miss.push("objetivo");
+  if(intent.orcamento_maximo>0) score+=W.orcamento; else miss.push("orcamento_maximo");
+  const reg=intent.regioes_preferidas||[];
+  const raw=(intent.raw_summary||"").toLowerCase();
+  if(reg.length || /guaruj[aá]/.test(raw)) score+=W.regiao; else miss.push("regiao");
+  if(intent.tipo_imovel) score+=W.tipo; else miss.push("tipo_imovel");
+  if(intent.dormitorios_min!=null || intent.metragem_min!=null) score+=W.tamanho; else miss.push("dormitorios_ou_metragem");
+  score=Math.min(1,Math.round(score*100)/100);
+  return { complete: miss.length===0 && score>=0.8, score, missing: miss };
+}
+
+function freshness(ageH){
+  if(ageH<=48) return {score:1, status:"RECENT"};
+  if(ageH<=168) return {score:.85, status:"RECENTLY_SEEN"};
+  if(ageH<=720) return {score:.55, status:"OLD"};
+  return {score:.3, status:"NEEDS_CONFIRMATION"};
+}
+
+function merge(prev, neu){
+  const m={...(prev||{})};
+  Object.keys(neu).forEach(k=>{
+    const v=neu[k];
+    if(v==null||v===""||(Array.isArray(v)&&!v.length)) return;
+    m[k]=v;
+  });
+  return m;
+}
+
+function clarify(miss, intent){
+  const known = summarizeIntent(intent);
+  const qs = [];
+  if(miss.includes("objetivo")) qs.push("É para morar ou para investir?");
+  if(miss.includes("orcamento_maximo")) qs.push("Qual o valor máximo (ex.: 450 mil)?");
+  if(miss.includes("regiao")) qs.push("Tem região de preferência (Enseada, Pitangueiras, Astúrias…)?");
+  if(miss.includes("tipo_imovel")) qs.push("Prefere apartamento, casa, ou está aberto?");
+  if(miss.includes("dormitorios_ou_metragem")) qs.push("Quantos dormitórios no mínimo?");
+  if(intent.distancia_praia_ambigua && !intent.distancia_praia_max_metros)
+    qs.push("Quando diz perto da praia: até 300 m, 500 m ou na quadra?");
+  if(!qs.length) qs.push("Há algo indispensável ou que você não aceita?");
+  return "Já registrei: " + known + ".\n\nAinda preciso de: " + qs.slice(0, 2).join(" ");
+}
+
+
+function buildSearchQueries(intent){
+  const parts = ["apartamento à venda Guarujá SP"];
+  if(intent.regioes_preferidas && intent.regioes_preferidas[0])
+    parts.push(intent.regioes_preferidas[0].bairro || intent.regioes_preferidas[0]);
+  if(intent.dormitorios_min) parts.push(intent.dormitorios_min + " quartos");
+  if(intent.orcamento_maximo) parts.push("até " + Math.round(intent.orcamento_maximo));
+  if(intent.distancia_praia_ambigua || intent.distancia_praia_max_metros) parts.push("perto da praia");
+  const q1 = parts.join(" ");
+  const q2 = "apartamento venda Guarujá " + (intent.regioes_preferidas && intent.regioes_preferidas[0] ? (intent.regioes_preferidas[0].bairro||"") : "") + " zapimoveis OR vivareal OR olx";
+  return [q1, q2];
+}
+
+function normalizeListing(raw){
+  function num(v){
+    if(v==null || v==="" || v==="Não informado" || v==="null") return null;
+    if(typeof v === "number" && !isNaN(v)) return v;
+    const n = parseFloat(String(v).replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".").replace(/[^0-9.]/g,""));
+    return isNaN(n) ? null : n;
+  }
+  const price = num(raw.price != null ? raw.price : raw.preco);
+  const url = String(raw.url || raw.source_url || raw.link || "").trim();
+  if(!url || !/^https?:\/\//i.test(url)) return null;
+  if(/fonte-demo\.example|example\.com/i.test(url)) return null;
+  let host = "";
+  try { host = new URL(url).hostname.replace(/^www\./,""); } catch(e){ return null; }
+  return {
+    id: url, url: url,
+    company: raw.company || raw.imobiliaria || raw.portal || host,
+    portal: host,
+    price: price,
+    bedrooms: num(raw.bedrooms != null ? raw.bedrooms : raw.quartos),
+    suites: num(raw.suites),
+    parking: num(raw.parking != null ? raw.parking : (raw.vagas != null ? raw.vagas : raw.parking_spaces)),
+    area: num(raw.area != null ? raw.area : (raw.metragem != null ? raw.metragem : raw.area_m2)),
+    condo: num(raw.condo != null ? raw.condo : (raw.condominio != null ? raw.condominio : raw.condominium)),
+    neighborhood: raw.neighborhood || raw.bairro || null,
+    beach: num(raw.beach != null ? raw.beach : (raw.distancia_praia_m != null ? raw.distancia_praia_m : raw.distance_to_beach_m)),
+    type: String(raw.type || raw.tipo || "apartamento").toLowerCase(),
+    features: Array.isArray(raw.features) ? raw.features : (Array.isArray(raw.caracteristicas) ? raw.caracteristicas : []),
+    desc: raw.desc || raw.description || raw.descricao || null,
+    ageH: 24,
+    source_name: raw.source_name || host || "Web"
+  };
+}
+
+function dedupeListings(list){
+  const seen = new Map();
+  list.forEach(function(l){
+    if(!l || !l.url) return;
+    let key = l.url.split("?")[0].replace(/\/$/,"");
+    if(l.price && l.bedrooms)
+      key = [l.price, l.bedrooms, String(l.neighborhood||"").toLowerCase()].join("|");
+    const prev = seen.get(key);
+    function score(x){ return [x.price,x.bedrooms,x.area,x.condo,x.beach,x.desc].filter(function(v){return v!=null;}).length; }
+    if(!prev || score(l) > score(prev)) seen.set(key, l);
+  });
+  return Array.from(seen.values());
+}
+
+function evaluateEvidence(intent, listing){
+  const budget = intent.orcamento_maximo;
+  const dorm = intent.dormitorios_min;
+  const condoMax = intent.condominio_max;
+  const wantBairro = (intent.regioes_preferidas && intent.regioes_preferidas[0])
+    ? String(intent.regioes_preferidas[0].bairro || intent.regioes_preferidas[0]).toLowerCase()
+    : null;
+  const wantBeach = !!(intent.distancia_praia_ambigua || intent.distancia_praia_max_metros);
+  const beachLim = intent.distancia_praia_max_metros || 500;
+
+  const confirmed = [];
+  const missing = [];
+  const failed = [];
+
+  if(budget != null){
+    if(listing.price == null) missing.push("preço");
+    else if(listing.price <= budget * 1.02) confirmed.push("preço dentro do orçamento");
+    else failed.push("preço acima do orçamento");
+  } else if(listing.price == null) missing.push("preço");
+  else confirmed.push("preço informado");
+
+  if(dorm != null){
+    if(listing.bedrooms == null) missing.push("dormitórios");
+    else if(listing.bedrooms >= dorm) confirmed.push(listing.bedrooms + " dormitórios (mín. " + dorm + ")");
+    else failed.push("menos dormitórios que o mínimo");
+  } else if(listing.bedrooms == null) missing.push("dormitórios");
+  else confirmed.push(listing.bedrooms + " dormitórios");
+
+  if(condoMax != null){
+    if(listing.condo == null) missing.push("condomínio");
+    else if(listing.condo <= condoMax) confirmed.push("condomínio dentro do limite");
+    else failed.push("condomínio acima do limite");
+  } else if(listing.condo == null) missing.push("condomínio");
+  else confirmed.push("condomínio informado");
+
+  if(wantBairro){
+    if(!listing.neighborhood) missing.push("bairro");
+    else {
+      const got = String(listing.neighborhood).toLowerCase();
+      if(got.indexOf(wantBairro) >= 0 || wantBairro.indexOf(got) >= 0) confirmed.push("bairro " + listing.neighborhood);
+      else missing.push("bairro preferido não confirmado (anúncio: " + listing.neighborhood + ")");
+    }
+  } else if(!listing.neighborhood) missing.push("bairro");
+  else confirmed.push("bairro " + listing.neighborhood);
+
+  if(wantBeach){
+    if(listing.beach == null) missing.push("distância da praia");
+    else if(listing.beach <= beachLim) confirmed.push("distância da praia ~" + listing.beach + " m");
+    else failed.push("distância da praia acima do desejado");
+  }
+
+  if(listing.area == null) missing.push("metragem");
+  else confirmed.push(listing.area + " m²");
+  if(listing.parking == null) missing.push("vagas");
+  else confirmed.push(listing.parking + " vaga(s)");
+
+  var status = "PARCIALMENTE_CONFIRMADO";
+  const hardFail = failed.some(function(f){
+    return f.indexOf("acima do orçamento") >= 0 || f.indexOf("menos dormitórios") >= 0 || f.indexOf("condomínio acima") >= 0;
+  });
+  if(hardFail) status = "DESCARTADO";
+  else {
+    const priceOk = budget == null || (listing.price != null && listing.price <= budget * 1.02);
+    const dormOk = dorm == null || (listing.bedrooms != null && listing.bedrooms >= dorm);
+    const condoKnownOk = condoMax == null || listing.condo != null;
+    const condoValOk = condoMax == null || listing.condo == null || listing.condo <= condoMax;
+    const beachKnownOk = !wantBeach || listing.beach != null;
+    if(priceOk && dormOk && condoValOk && !hardFail){
+      if((budget == null || listing.price != null) && (dorm == null || listing.bedrooms != null) && condoKnownOk && beachKnownOk && !(wantBairro && !listing.neighborhood))
+        status = "CONFIRMADO";
+      else
+        status = "PARCIALMENTE_CONFIRMADO";
+    }
+  }
+
+  var score = status === "CONFIRMADO" ? 0.8 : status === "PARCIALMENTE_CONFIRMADO" ? 0.5 : 0.1;
+  score += Math.min(0.15, confirmed.length * 0.03);
+  score -= Math.min(0.2, failed.length * 0.07);
+  score = Math.max(0, Math.min(1, Math.round(score * 1000) / 1000));
+
+  return { status: status, confirmed: confirmed, missing: missing, failed: failed, score: score };
+}
+
+function rankDynamic(intent, listings){
+  const usable = (listings || []).filter(function(l){
+    return l && l.url && (l.price != null || l.bedrooms != null || l.neighborhood);
+  });
+  const evaluated = usable.map(function(l){
+    const ev = evaluateEvidence(intent, l);
+    return {
+      rank: 0,
+      score: ev.score,
+      evidence_status: ev.status,
+      criteria_confirmed: ev.confirmed,
+      criteria_missing: ev.missing,
+      criteria_failed: ev.failed,
+      property: {
+        price: l.price,
+        bedrooms: l.bedrooms,
+        suites: l.suites,
+        area_m2: l.area,
+        parking_spaces: l.parking,
+        neighborhood: l.neighborhood,
+        distance_to_beach_m: l.beach,
+        features: l.features || [],
+        source_name: l.source_name || l.portal || "Web",
+        source_url: l.url,
+        source_company: l.company,
+        freshness_status: "WEB_LIVE",
+        condominium: l.condo,
+        description: l.desc
+      },
+      explanation: {
+        por_que_recomendamos: ev.status === "CONFIRMADO"
+          ? ["Critérios obrigatórios confirmados na fonte"]
+          : (ev.status === "PARCIALMENTE_CONFIRMADO"
+            ? ["Parece compatível, mas faltam dados na fonte"]
+            : ["Não atende a critério(s) obrigatório(s)"]),
+        o_que_atende: ev.confirmed,
+        o_que_nao_atende: ev.failed,
+        pontos_de_atencao: ev.missing.map(function(m){ return "Não informado: " + m; })
+      }
+    };
+  });
+
+  const kept = evaluated.filter(function(x){ return x.evidence_status !== "DESCARTADO"; });
+  const order = { CONFIRMADO: 0, PARCIALMENTE_CONFIRMADO: 1 };
+  kept.sort(function(a,b){
+    const oa = order[a.evidence_status] != null ? order[a.evidence_status] : 9;
+    const ob = order[b.evidence_status] != null ? order[b.evidence_status] : 9;
+    if(oa !== ob) return oa - ob;
+    return b.score - a.score;
+  });
+  return kept.slice(0, 8).map(function(x,i){ x.rank = i + 1; return x; });
+}
+
+
+async function webSearchProperties(intent, key){
+  const queries = buildSearchQueries(intent);
+  var lastErr = null;
+
+  if(key){
+    try {
+      return await webSearchViaGeminiGrounding(intent, key, queries);
+    } catch(e) {
+      lastErr = e;
+      console.warn("Gemini grounding failed:", e);
+    }
+  }
+
+  try {
+    const fb = await webSearchViaJina(intent, queries);
+    if(fb.listings && fb.listings.length){
+      fb.note = "Busca web pública (fallback). Gemini grounding indisponível ou sem cota.";
+      return fb;
+    }
+  } catch(e2) {
+    console.warn("Fallback web failed:", e2);
+    lastErr = lastErr || e2;
+  }
+
+  if(lastErr && String(lastErr.message || "").indexOf("429") >= 0){
+    throw new Error("Cota Gemini esgotada (HTTP 429). O Google Search grounding do plano gratuito acaba rápido. Espere alguns minutos, use chave de outro projeto Google, ou ative faturamento em aistudio.google.com.");
+  }
+  throw new Error((lastErr && lastErr.message) ? lastErr.message : "Nenhum anúncio verificável encontrado.");
+}
+
+async function webSearchViaGeminiGrounding(intent, key, queries){
+  let model = localStorage.getItem("ii_model") || "gemini-3.1-flash-lite-preview";
+  if(/2\.5-flash/i.test(model)) model = "gemini-3.1-flash-lite-preview";
+  try {
+    const available = await listGeminiModels(key);
+    const preferSaved = available.filter(function(n){
+      const clean = n.replace(/^models\//, "");
+      return clean === model || n === model;
+    });
+    const flash = available.filter(function(n){
+      return /flash/i.test(n) && !/image|tts|live|embed|2\.5-flash/i.test(n);
+    });
+    if(preferSaved.length) model = preferSaved[0].replace(/^models\//, "");
+    else if(flash.length) model = flash[0].replace(/^models\//, "");
+    else if(available.length) model = available[0].replace(/^models\//, "");
+  } catch(e) {}
+  if(/2\.5-flash/i.test(model)) model = "gemini-3.1-flash-lite-preview";
+
+  const prompt = [
+    "Voce extrai anuncios imobiliarios REAIS da web.",
+    "Use Google Search para achar imoveis a VENDA no Guaruja (SP).",
+    "Buyer Intent: " + JSON.stringify(intent),
+    "Consultas: " + queries.join(" | "),
+    "REGRAS: NAO invente imoveis, precos ou URLs. So URL https real. Campo ausente = null. Maximo 8.",
+    "Responda APENAS JSON com chave listings (array com price, bedrooms, neighborhood, url, company, source_name)."
+  ].join("\n");
+
+  const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(key);
+  const body = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    tools: [{ google_search: {} }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
+  };
+  const res = await fetch(apiUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify(body)
+  });
+  const rawText = await res.text();
+  if(!res.ok) throw new Error("Busca web HTTP " + res.status + " (" + model + "): " + rawText.substring(0, 160));
+  const data = JSON.parse(rawText);
+  localStorage.setItem("ii_model", model);
+  return parseGroundedResponse(data, model, queries);
+}
+
+function parseGroundedResponse(data, model, queries){
+  const parts = ((((data.candidates || [])[0] || {}).content || {}).parts || []);
+  const textOut = parts.map(function(pt){ return pt.text || ""; }).join("\n").trim();
+  const gm = ((data.candidates || [])[0] || {}).groundingMetadata || {};
+  const groundUrls = [];
+  (gm.groundingChunks || []).forEach(function(ch){
+    const u = (ch.web && (ch.web.uri || ch.web.url)) || null;
+    const t = (ch.web && ch.web.title) || "";
+    if(u && /^https?:/i.test(u)) groundUrls.push({ url: u, title: t });
+  });
+  let listings = [];
+  try {
+    let jtxt = textOut;
+    const fenced = textOut.match(/```json\s*([\s\S]*?)```/i);
+    if(fenced) jtxt = fenced[1];
+    const s = jtxt.indexOf("{");
+    const e = jtxt.lastIndexOf("}");
+    if(s >= 0 && e > s) {
+      const parsed = JSON.parse(jtxt.substring(s, e + 1));
+      listings = parsed.listings || parsed.imoveis || parsed.results || [];
+    }
+  } catch(err) { console.warn(err); }
+  let normalized = listings.map(normalizeListing).filter(Boolean);
+  if(!normalized.length && groundUrls.length){
+    groundUrls.forEach(function(g){
+      let host = "web";
+      try { host = new URL(g.url).hostname.replace(/^www\./, ""); } catch(e){}
+      if(/zapimoveis|vivareal|olx|imovelweb|chavesnamao|imovel|guaruja/i.test(host + " " + (g.title || ""))){
+        normalized.push({
+          id: g.url, url: g.url, company: host, portal: host,
+          price: null, bedrooms: null, suites: null, parking: null, area: null, condo: null,
+          neighborhood: null, beach: null, type: "apartamento", features: [],
+          desc: g.title || null, ageH: 24, source_name: host
+        });
+      }
+    });
+  }
+  normalized = dedupeListings(normalized);
+  return { model: model, queries: queries, webSearchQueries: gm.webSearchQueries || queries, listings: normalized, groundingCount: groundUrls.length };
+}
+
+async function webSearchViaJina(intent, queries){
+  const q = queries[0] || "apartamento venda Guarujá Astúrias";
+  const targets = [
+    "https://www.bing.com/search?q=" + encodeURIComponent(q + " site:zapimoveis.com.br OR site:vivareal.com.br"),
+    "https://search.brave.com/search?q=" + encodeURIComponent(q + " zapimoveis OR vivareal Guarujá")
+  ];
+  const found = [];
+  const linkRe = /https?:\/\/(?:www\.)?(zapimoveis\.com\.br|vivareal\.com\.br|olx\.com\.br|imovelweb\.com\.br|chavesnamao\.com\.br)[^\s)\]"<>]*/gi;
+
+  for(let t = 0; t < targets.length && found.length < 8; t++){
+    try {
+      const readerUrl = "https://r.jina.ai/" + targets[t];
+      const res = await fetch(readerUrl, { headers: { "Accept": "text/plain" } });
+      if(!res.ok) continue;
+      const md = await res.text();
+      const links = md.match(linkRe) || [];
+      const uniq = [];
+      links.forEach(function(u){
+        u = u.replace(/[.,;]+$/, "");
+        if(uniq.indexOf(u) < 0) uniq.push(u);
+      });
+      uniq.slice(0, 10).forEach(function(u){
+        let host = "web";
+        try { host = new URL(u).hostname.replace(/^www\./, ""); } catch(e){}
+        const idx = md.indexOf(u);
+        const snippet = idx >= 0 ? md.substring(Math.max(0, idx - 220), idx + 280) : "";
+        let price = null, bedrooms = null, neighborhood = null;
+        const pm = snippet.match(/R\$\s*([\d.]+)/);
+        if(pm){
+          const n = parseFloat(pm[1].replace(/\./g, ""));
+          if(n >= 50000 && n <= 50000000) price = n;
+        }
+        const rm = snippet.match(/(\d+)\s*(?:quarto|dorm)/i);
+        if(rm) bedrooms = parseInt(rm[1], 10);
+        const bairros = ["Astúrias", "Asturias", "Enseada", "Pitangueiras", "Tombo", "Pernambuco"];
+        for(let bi = 0; bi < bairros.length; bi++){
+          if(snippet.indexOf(bairros[bi]) >= 0){
+            neighborhood = bairros[bi].replace("Asturias", "Astúrias");
+            break;
+          }
+        }
+        found.push({
+          id: u, url: u, company: host, portal: host,
+          price: price, bedrooms: bedrooms, suites: null, parking: null, area: null, condo: null,
+          neighborhood: neighborhood, beach: null, type: "apartamento", features: [],
+          desc: snippet.replace(/\s+/g, " ").trim().substring(0, 160) || null,
+          ageH: 24, source_name: host
+        });
+      });
+    } catch(e) { console.warn("fallback target failed", e); }
+  }
+
+  let normalized = found.map(normalizeListing).filter(Boolean);
+  normalized = dedupeListings(normalized);
+  const budget = intent.orcamento_maximo;
+  const dorm = intent.dormitorios_min;
+  normalized = normalized.filter(function(l){
+    // Drop pure hub links with zero structured data
+    if(l.price == null && l.bedrooms == null && l.neighborhood == null) return false;
+    if(budget != null && l.price != null && l.price > budget * 1.08) return false;
+    if(dorm != null && l.bedrooms != null && l.bedrooms < dorm) return false;
+    return true;
+  });
+  return {
+    model: "web-fallback",
+    queries: queries,
+    webSearchQueries: queries,
+    listings: normalized.slice(0, 8),
+    groundingCount: normalized.length
+  };
+}
+
+
+const GEMINI_MODELS = [
+  "gemini-3.1-flash-lite-preview",
+  "gemini-flash-lite-latest",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-2.0-flash"
+];
+
+async function listGeminiModels(key){
+  const url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(key) + "&pageSize=100";
+  const res = await fetch(url);
+  const body = await res.text();
+  if(!res.ok){
+    if(res.status === 400 || res.status === 401 || res.status === 403)
+      throw new Error("Chave inválida ou sem acesso (HTTP " + res.status + "). Gere em aistudio.google.com/apikey");
+    throw new Error("Não consegui listar modelos (HTTP " + res.status + ")");
+  }
+  const data = JSON.parse(body);
+  const out = [];
+  (data.models || []).forEach(function(m){
+    const name = (m.name || "").replace(/^models\//, "");
+    const actions = m.supportedGenerationMethods || m.supported_actions || [];
+    if(!name) return;
+    if(actions.length === 0 || actions.indexOf("generateContent") >= 0) out.push(name);
+  });
+  return out;
+}
+
+async function callGeminiRaw(key, model, prompt, jsonMode){
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(key);
+  const body = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
+  };
+  if(jsonMode) body.generationConfig.responseMimeType = "application/json";
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify(body)
+  });
+  const errText = await res.text();
+  if(!res.ok){
+    const err = new Error("Gemini HTTP " + res.status + " (" + model + ")");
+    err.status = res.status;
+    err.body = errText.substring(0, 200);
+    throw err;
+  }
+  const data = JSON.parse(errText);
+  const parts = ((((data.candidates || [])[0] || {}).content || {}).parts || []);
+  return ((parts[0] || {}).text || "").trim();
+}
+
+async function callGeminiWithFallback(key, preferred, prompt, jsonMode){
+  let available = [];
+  try { available = await listGeminiModels(key); } catch(e){ console.warn(e); }
+  const flashFirst = available.filter(function(n){ return /flash/i.test(n) && !/image|tts|live|embed|2\.5-flash/i.test(n); });
+  const preferredSafe = (preferred && !/2\.5-flash/i.test(preferred)) ? preferred : "gemini-3.1-flash-lite-preview";
+  const list = [preferredSafe].concat(flashFirst).concat(available).concat(GEMINI_MODELS)
+    .filter(function(m,i,a){ return m && a.indexOf(m) === i && !/2\.5-flash$/i.test(m); });
+  if(!list.length) throw new Error("Nenhum modelo disponível nesta chave.");
+  const tried = [];
+  let lastErr = null;
+  for(let i=0;i<list.length;i++){
+    const model = list[i];
+    tried.push(model);
+    try {
+      const text = await callGeminiRaw(key, model, prompt, jsonMode);
+      localStorage.setItem("ii_model", model);
+      return { text: text, model: model };
+    } catch(e){
+      lastErr = e;
+      if(e.status === 401 || e.status === 403)
+        throw new Error("Chave inválida ou sem permissão (HTTP " + e.status + ").");
+      if(e.status === 429)
+        throw new Error("Limite da API (429). Aguarde e tente de novo.");
+      continue;
+    }
+  }
+  throw new Error((lastErr && lastErr.message ? lastErr.message : "Falha Gemini") + " | Tentados: " + tried.slice(0,10).join(", "));
+}
+
+async function extractAI(message){
+  const provider = localStorage.getItem("ii_provider") || "local";
+  const key = localStorage.getItem("ii_key") || "";
+  if(provider !== "gemini" || !key) return parseIntent(message);
+  const preferred = localStorage.getItem("ii_model") || "gemini-3.5-flash";
+  const prompt = [
+    "Extraia intenção de compra imobiliária em Guarujá. NÃO invente dados.",
+    "Mensagem: " + message,
+    "Responda APENAS JSON com campos possíveis:",
+    "objetivo (morar|investir), tipo_imovel, orcamento_maximo (número), dormitorios_min,",
+    "condominio_max (número), distancia_praia_ambigua (bool), distancia_praia_max_metros,",
+    "regioes_preferidas (array de {bairro,peso}), raw_summary."
+  ].join("\n");
+  const result = await callGeminiWithFallback(key, preferred, prompt, true);
+  let j;
+  try {
+    j = JSON.parse(result.text.replace(/^```json\s*/i,"").replace(/```$/,""));
+  } catch(e) {
+    const s = result.text.indexOf("{");
+    const e2 = result.text.lastIndexOf("}");
+    if(s >= 0 && e2 > s) j = JSON.parse(result.text.substring(s, e2+1));
+    else throw new Error("JSON inválido da IA");
+  }
+  return Object.assign({}, parseIntent(message), j, { raw_summary: j.raw_summary || message });
+}
+
+
+function addBubble(text, role){
+  const d=document.createElement("div");
+  d.className="bubble "+role;
+  d.textContent=text;
+  $("#msgs").appendChild(d);
+  $("#msgs").scrollTop=$("#msgs").scrollHeight;
+  return d;
+}
+
+function renderCards(recs){
+  const box = $("#results");
+  box.style.display = "flex";
+  box.innerHTML = "";
+  const confirmed = (recs || []).filter(function(r){ return r.evidence_status === "CONFIRMADO"; });
+  const partial = (recs || []).filter(function(r){ return r.evidence_status === "PARCIALMENTE_CONFIRMADO"; });
+  const nC = confirmed.length, nP = partial.length;
+
+  const title = document.createElement("p");
+  title.className = "results-title";
+  if(nC === 0 && nP === 0) title.textContent = "Nenhum anúncio com evidência suficiente para os seus critérios.";
+  else if(nC > 0 && nP === 0) title.textContent = nC + " imóvel(is) compatível(is) — critérios confirmados na fonte.";
+  else if(nC > 0 && nP > 0) title.textContent = "Encontrei " + nC + " imóvel(is) que atende(m) aos critérios e " + nP + " opção(ões) promissora(s) que precisam de confirmação.";
+  else title.textContent = nP + " opção(ões) encontrada(s), mas dados importantes não foram confirmados na fonte.";
+  box.appendChild(title);
+
+  function addSection(label, items, tone){
+    if(!items.length) return;
+    const h = document.createElement("p");
+    h.className = "results-title";
+    h.style.marginTop = "10px";
+    h.textContent = label;
+    box.appendChild(h);
+    items.forEach(function(rec){ box.appendChild(buildCard(rec, tone)); });
+  }
+  addSection("🟢 Critérios confirmados", confirmed, "ok");
+  addSection("🟡 Precisa confirmar", partial, "warn");
+  box.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function buildCard(rec, tone){
+  const p = rec.property || {};
+  const card = document.createElement("article");
+  card.className = "pcard";
+  if(tone === "warn") card.style.borderColor = "rgba(245,158,11,.5)";
+  if(tone === "ok") card.style.borderColor = "rgba(16,185,129,.5)";
+
+  const statusLabel = rec.evidence_status === "CONFIRMADO" ? "CONFIRMADO" : "PARCIAL";
+  const statusColor = rec.evidence_status === "CONFIRMADO" ? "var(--green)" : "var(--yellow)";
+
+  const meta = [];
+  meta.push(p.bedrooms != null ? (p.bedrooms + " quartos") : "Quartos: Não informado");
+  meta.push(p.area_m2 != null ? (p.area_m2 + " m²") : "Metragem: Não informada");
+  meta.push(p.parking_spaces != null ? (p.parking_spaces + " vaga(s)") : "Vagas: Não informadas");
+  meta.push(p.neighborhood ? p.neighborhood : "Bairro: Não informado");
+  meta.push(p.distance_to_beach_m != null ? ("~" + p.distance_to_beach_m + " m da praia") : "Distância da praia: Não informada");
+  meta.push(p.condominium != null ? ("Cond. R$ " + Number(p.condominium).toLocaleString("pt-BR")) : "Condomínio: Não informado");
+
+  const conf = (rec.criteria_confirmed || []).slice(0, 6).map(function(x){ return "✓ " + x; }).join(" · ");
+  const miss = (rec.criteria_missing || []).slice(0, 6).map(function(x){ return "? " + x; }).join(" · ");
+  const fail = (rec.criteria_failed || []).slice(0, 4).map(function(x){ return "✗ " + x; }).join(" · ");
+
+  card.innerHTML =
+    '<div class="pcard-top">' +
+      '<div class="price">' + money(p.price) + '</div>' +
+      '<div class="score" style="color:' + statusColor + ';border:1px solid ' + statusColor + ';background:transparent">' + statusLabel + '</div>' +
+    '</div>' +
+    '<div class="meta">' + meta.map(function(m){ return '<span>' + m + '</span>'; }).join('') + '</div>' +
+    '<div class="why"><strong>Evidência na fonte</strong>' +
+      (conf ? '<div style="color:var(--green);font-size:12px;margin-top:4px">' + conf + '</div>' : '') +
+      (miss ? '<div style="color:var(--yellow);font-size:12px;margin-top:4px">' + miss + '</div>' : '') +
+      (fail ? '<div style="color:var(--red);font-size:12px;margin-top:4px">' + fail + '</div>' : '') +
+    '</div>' +
+    '<div class="src">Fonte: ' + (p.source_name || "—") +
+      (p.source_url ? ' · <a href="' + p.source_url + '" target="_blank" rel="noopener">Ver anúncio original</a>' : '') +
+    '</div>' +
+    '<div class="actions">' +
+      '<button type="button" class="btn-sm" data-e="liked">Gostei</button>' +
+      '<button type="button" class="btn-sm" data-e="disliked">Não gostei</button>' +
+      '<button type="button" class="btn-sm" data-e="more">Mais parecidos</button>' +
+      '<button type="button" class="btn-sm" data-e="saved">Salvar</button>' +
+    '</div>';
+
+  card.querySelectorAll("[data-e]").forEach(function(btn){
+    btn.onclick = function(){
+      const fb = JSON.parse(localStorage.getItem("ii_fb") || "[]");
+      fb.push({ t: Date.now(), e: btn.dataset.e, url: p.source_url, status: rec.evidence_status, buyer: state.buyerId });
+      localStorage.setItem("ii_fb", JSON.stringify(fb));
+      btn.classList.add(btn.dataset.e === "disliked" ? "no" : "ok");
+      btn.disabled = true;
+    };
+  });
+  return card;
+}
+
+
+async function handle(message){
+  if(state.busy||!message.trim()) return;
+  state.busy=true;
+  $("#btnSend").disabled=true;
+  addBubble(message,"user");
+  const load=addBubble("Pensando…","load");
+  try{
+    let extracted;
+    try{ extracted=await extractAI(message); }
+    catch(e){ extracted=parseIntent(message); addBubble("(IA indisponível — usei interpretação local)","sys"); }
+    // Always merge local parse as safety net (catches "ate uns 450 mil" even if AI fails)
+    const localParsed = parseIntent(message);
+    extracted = merge(extracted || {}, localParsed);
+    // If user insists they already said something, re-scan full conversation bubbles
+    if(localParsed._user_insists || /ja (falei|disse|coloquei)|nao viu/.test(message.toLowerCase())){
+      const hist = Array.from(document.querySelectorAll(".bubble.user")).map(function(el){ return el.textContent; }).join(" \n ");
+      extracted = merge(extracted, parseIntent(hist));
+    }
+    state.intent = merge(state.intent, extracted);
+    if(!state.buyerId) state.buyerId = "b_" + Date.now();
+    const c = completeness(state.intent);
+    load.remove();
+    if(!c.complete){
+      addBubble(clarify(c.missing, state.intent), "bot");
+      setPill("perfil " + Math.round(c.score * 100) + "%");
+    } else {
+      const key = localStorage.getItem("ii_key") || "";
+      const provider = localStorage.getItem("ii_provider") || "local";
+      {
+        addBubble("Perfil registrado: " + summarizeIntent(state.intent) + ".\n\nVerificando anúncios públicos na web e avaliando evidências…","bot");
+        setPill("buscando na web","search");
+        try {
+          const search = await webSearchProperties(state.intent, key);
+          const recs = rankDynamic(state.intent, search.listings || []);
+          if(!recs.length){
+            addBubble("A busca na web não retornou anúncios verificáveis com URL para este perfil neste momento. Tente ampliar o orçamento ou remover algum filtro, ou tente de novo em instantes.\n\nConsultas: " + (search.webSearchQueries||search.queries||[]).join(" | "),"bot");
+            setPill("sem resultados");
+          } else {
+                        const nC = recs.filter(function(r){ return r.evidence_status === "CONFIRMADO"; }).length;
+            const nP = recs.filter(function(r){ return r.evidence_status === "PARCIALMENTE_CONFIRMADO"; }).length;
+            var summary;
+            if(nC > 0 && nP === 0) summary = nC + " imóvel(is) com critérios CONFIRMADOS na fonte.";
+            else if(nC > 0 && nP > 0) summary = "Encontrei " + nC + " imóvel(is) que atende(m) aos critérios e " + nP + " opção(ões) que parecem promissoras, mas precisam de confirmação.";
+            else if(nP > 0) summary = nP + " anúncio(s) encontrado(s), porém dados importantes NÃO foram confirmados na fonte. Não assumimos compatibilidade total.";
+            else summary = "Nenhum imóvel com evidência compatível após verificação.";
+            const lines = recs.slice(0, 5).map(function(r){
+              const p = r.property;
+              const pr = p.price != null ? money(p.price) : "Preço: Não informado";
+              const qt = p.bedrooms != null ? (p.bedrooms + " dorms") : "Quartos: Não informado";
+              const ba = p.neighborhood || "Bairro: Não informado";
+              return "#" + r.rank + " [" + r.evidence_status + "] · " + pr + " · " + qt + " · " + ba + " · " + (p.source_name || "");
+            });
+            addBubble(summary + "\n\n" + lines.join("\n") + "\n\nFonte da busca: " + (search.model || "web") + ". Links = anúncio original. Campos ausentes = Não informado (nunca inventados).","bot");
+            renderCards(recs);
+            setPill("resultados web","go");
+          }
+        } catch(err){
+          console.error(err);
+          addBubble("Falha na busca web: " + err.message + "\n\nVerifique a chave Gemini e tente novamente. Não exibimos imóveis inventados.","bot");
+          setPill("erro busca");
+        }
+      }
+    }
+  } catch(e){
+    load.remove();
+    addBubble("Erro: "+e.message,"bot");
+  } finally {
+    state.busy=false;
+    $("#btnSend").disabled=false;
+    $("#input").focus();
+  }
+}
+
+function showLanding(){
+  $("#landing").classList.add("on");
+  $("#chat").classList.remove("on");
+}
+function showChat(){
+  $("#landing").classList.remove("on");
+  $("#chat").classList.add("on");
+  $("#input").focus();
+}
+
+$("#btnStart").onclick=()=>{
+  const t=$("#startInput").value.trim();
+  if(!t){ $("#startInput").focus(); return; }
+  state.intent={}; state.buyerId=null;
+  $("#msgs").innerHTML=""; $("#results").style.display="none"; $("#results").innerHTML="";
+  showChat(); handle(t);
+};
+$("#btnBack").onclick=$("#btnHome").onclick=showLanding;
+$("#form").onsubmit=e=>{
+  e.preventDefault();
+  const t=$("#input").value.trim();
+  if(!t) return;
+  $("#input").value="";
+  handle(t);
+};
+$("#startInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); $("#btnStart").click(); }
+});
+
+// AI modal
+$("#btnAI").onclick=()=>{
+  $("#aiProvider").value=localStorage.getItem("ii_provider")||"local";
+  $("#aiKey").value=localStorage.getItem("ii_key")||"";
+  $("#aiModel").value=localStorage.getItem("ii_model")||"gemini-3.1-flash-lite-preview";
+  $("#aiModal").classList.add("open");
+};
+$("#closeAI").onclick=()=>$("#aiModal").classList.remove("open");
+$("#saveAI").onclick=()=>{
+  localStorage.setItem("ii_provider", $("#aiProvider").value);
+  localStorage.setItem("ii_key", $("#aiKey").value.trim());
+  localStorage.setItem("ii_model", $("#aiModel").value.trim()||"gemini-3.1-flash-lite-preview");
+  $("#aiStatus").textContent="Salvo. Provedor: "+$("#aiProvider").value;
+  $("#aiStatus").style.color="var(--green)";
+};
+$("#testAI").onclick=async()=>{
+  const key=$("#aiKey").value.trim();
+  if(!key){ alert("Cole a API key Gemini."); return; }
+  $("#aiStatus").textContent="Descobrindo modelos da sua chave…";
+  $("#aiStatus").style.color="var(--yellow)";
+  try{
+    localStorage.setItem("ii_provider","gemini");
+    localStorage.setItem("ii_key",key);
+    let preferred=$("#aiModel").value.trim();
+    let discovered=[];
+    try{
+      discovered=await listGeminiModels(key);
+      const flash=discovered.filter(function(n){ return /flash/i.test(n) && !/image|tts|live|embed|2\.5-flash/i.test(n); });
+      if(!preferred && flash.length) preferred=flash[0];
+      else if(!preferred && discovered.length) preferred=discovered[0];
+    }catch(e){ console.warn(e); }
+    if(!preferred) preferred="gemini-3.1-flash-lite-preview";
+    localStorage.setItem("ii_model", preferred);
+    const r=await extractAI("Quero apartamento no Guarujá até 400 mil 4 quartos");
+    const used=localStorage.getItem("ii_model")||preferred;
+    $("#aiModel").value=used;
+    const tip=discovered.length ? (" | " + discovered.length + " modelos na chave") : "";
+    $("#aiStatus").textContent="OK — usando: "+used+" | orçamento: "+(r.orcamento_maximo||"?")+tip;
+    $("#aiStatus").style.color="var(--green)";
+  }catch(e){
+    $("#aiStatus").textContent="Erro: "+e.message;
+    $("#aiStatus").style.color="var(--red)";
+  }
+};
+</script>
+</body>
+</html>
