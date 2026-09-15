@@ -97,7 +97,27 @@
     .start-card .btn-primary { width: 100%; margin-top: 12px; padding: 12px; }
 
     /* CHAT */
-    #chat { max-width: 760px; width: 100%; margin: 0 auto; height: calc(100vh - 62px); }
+    #chat {
+      max-width: 760px; width: 100%; margin: 0 auto;
+      height: calc(100vh - 62px); min-height: 420px;
+    }
+    #chat.screen.on {
+      display: flex !important;
+      flex-direction: column;
+    }
+    #chat .msgs {
+      flex: 1 1 auto;
+      min-height: 160px;
+      overflow-y: auto;
+    }
+    #chat .composer {
+      flex-shrink: 0;
+    }
+    #chat .results {
+      flex-shrink: 0;
+      max-height: 45vh;
+      overflow-y: auto;
+    }
     .chat-head {
       display: flex; align-items: center; gap: 10px; padding: 12px 16px;
       border-bottom: 1px solid var(--border); background: var(--panel);
@@ -1089,6 +1109,18 @@ function buildCard(rec, tone){
 }
 
 
+
+function addBubble(text, kind){
+  const box = document.querySelector("#msgs");
+  if(!box) return null;
+  const d = document.createElement("div");
+  d.className = "bubble " + (kind || "bot");
+  d.textContent = text == null ? "" : String(text);
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  return d;
+}
+
 async function handle(message){
   if(state.busy||!message.trim()) return;
   state.busy=true;
@@ -1110,7 +1142,7 @@ async function handle(message){
     state.intent = merge(state.intent, extracted);
     if(!state.buyerId) state.buyerId = "b_" + Date.now();
     const c = completeness(state.intent);
-    load.remove();
+    if(load) load.remove();
     if(!c.complete){
       addBubble(clarify(c.missing, state.intent), "bot");
       setPill("perfil " + Math.round(c.score * 100) + "%");
@@ -1153,7 +1185,7 @@ async function handle(message){
       }
     }
   } catch(e){
-    load.remove();
+    if(load) load.remove();
     addBubble("Erro: "+e.message,"bot");
   } finally {
     state.busy=false;
@@ -1175,9 +1207,13 @@ function showChat(){
 $("#btnStart").onclick=()=>{
   const t=$("#startInput").value.trim();
   if(!t){ $("#startInput").focus(); return; }
-  state.intent={}; state.buyerId=null;
+  state.intent={}; state.buyerId=null; state.busy=false;
   $("#msgs").innerHTML=""; $("#results").style.display="none"; $("#results").innerHTML="";
-  showChat(); handle(t);
+  showChat();
+  Promise.resolve(handle(t)).catch(function(err){
+    console.error(err);
+    try { addBubble("Erro ao iniciar: " + (err && err.message ? err.message : err), "bot"); } catch(e) {}
+  });
 };
 $("#btnBack").onclick=$("#btnHome").onclick=showLanding;
 $("#form").onsubmit=e=>{
