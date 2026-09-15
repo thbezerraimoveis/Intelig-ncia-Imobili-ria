@@ -97,7 +97,10 @@
     .start-card .btn-primary { width: 100%; margin-top: 12px; padding: 12px; }
 
     /* CHAT */
-    #chat { max-width: 760px; width: 100%; margin: 0 auto; height: calc(100vh - 62px); }
+    #chat { max-width: 760px; width: 100%; margin: 0 auto; height: calc(100vh - 62px); min-height: 420px; }
+    #chat.screen.on { display: flex !important; flex-direction: column; }
+    #chat .msgs { flex: 1; min-height: 120px; }
+    #chat .composer { flex-shrink: 0; }
     .chat-head {
       display: flex; align-items: center; gap: 10px; padding: 12px 16px;
       border-bottom: 1px solid var(--border); background: var(--panel);
@@ -224,16 +227,15 @@
     <div class="modal">
       <button class="x" type="button" id="closeAI">×</button>
       <h3>Configurar IA</h3>
-      <p>Opcional. Sem chave, o app usa interpretação local. Com <strong>Groq</strong> (gsk_...) ou <strong>Gemini</strong> (AIza...), a IA interpreta melhor. A chave fica só neste navegador.</p>
+      <p>Opcional. Sem chave, o app usa interpretação local (já funciona no exemplo do Guarujá). Com Gemini, o app descobre sozinho os modelos da sua conta (3.5 / 3.8 Flash etc.). A chave fica só neste navegador.</p>
       <label>Provedor</label>
       <select id="aiProvider" style="width:100%;min-height:44px;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-family:inherit">
         <option value="local">Local (sem API)</option>
-        <option value="groq">Groq (chave gsk_...)</option>
-        <option value="gemini">Google Gemini (chave AIza...)</option>
+        <option value="gemini">Google Gemini</option>
       </select>
-      <label>API Key</label>
-      <input type="password" id="aiKey" placeholder="gsk_... ou AIza..." />
-      <label>Modelo (opcional — deixe vazio para auto)</label>
+      <label>API Key (Gemini)</label>
+      <input type="password" id="aiKey" placeholder="AIza..." />
+      <label>Modelo (opcional — se der 404, deixe vazio e clique Testar)</label>
       <input type="text" id="aiModel" placeholder="deixe vazio para auto" value="" style="min-height:44px" />
       <div class="modal-actions">
         <button class="btn btn-primary" type="button" id="saveAI">Salvar</button>
@@ -591,10 +593,8 @@ function rankDynamic(intent, listings){
 async function webSearchProperties(intent, key){
   const queries = buildSearchQueries(intent);
   var lastErr = null;
-  const provider = localStorage.getItem("ii_provider") || "local";
 
-  // Google Search grounding só funciona com Gemini
-  if(key && provider === "gemini"){
+  if(key){
     try {
       return await webSearchViaGeminiGrounding(intent, key, queries);
     } catch(e) {
@@ -606,9 +606,7 @@ async function webSearchProperties(intent, key){
   try {
     const fb = await webSearchViaJina(intent, queries);
     if(fb.listings && fb.listings.length){
-      fb.note = provider === "groq"
-        ? "Busca web pública (Groq não tem Google Search grounding)."
-        : "Busca web pública (fallback). Gemini grounding indisponível ou sem cota.";
+      fb.note = "Busca web pública (fallback). Gemini grounding indisponível ou sem cota.";
       return fb;
     }
   } catch(e2) {
@@ -617,7 +615,7 @@ async function webSearchProperties(intent, key){
   }
 
   if(lastErr && String(lastErr.message || "").indexOf("429") >= 0){
-    throw new Error("Cota da API esgotada (HTTP 429). Aguarde alguns minutos e tente de novo.");
+    throw new Error("Cota Gemini esgotada (HTTP 429). O Google Search grounding do plano gratuito acaba rápido. Espere alguns minutos, use chave de outro projeto Google, ou ative faturamento em aistudio.google.com.");
   }
   throw new Error((lastErr && lastErr.message) ? lastErr.message : "Nenhum anúncio verificável encontrado.");
 }
@@ -912,59 +910,13 @@ async function callGeminiWithFallback(key, preferred, prompt, jsonMode){
   );
 }
 
-/* ========== Groq (mesmo padrão do RadarImob) ========== */
-async function listGroqModels(key){
-  const res = await fetch("https://api.groq.com/openai/v1/models", {
-    headers: { "Authorization": "Bearer " + key }
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error?.message || "Erro ao listar modelos Groq");
-  const ids = (data.data || []).map(function(m){ return m.id; }).filter(Boolean);
-  const preferidos = [
-    "llama-3.1-8b-instant",
-    "llama-3.3-70b-versatile",
-    "llama3-8b-8192",
-    "llama3-70b-8192",
-    "gemma2-9b-it",
-    "openai/gpt-oss-20b",
-    "openai/gpt-oss-120b"
-  ];
-  for(var i = 0; i < preferidos.length; i++){
-    if(ids.indexOf(preferidos[i]) >= 0) return preferidos[i];
-  }
-  var chat = ids.find(function(id){ return !/whisper|guard|tts|prompt-guard/i.test(id); });
-  if(chat) return chat;
-  if(ids.length) return ids[0];
-  throw new Error("Nenhum modelo disponível nesta chave Groq");
-}
-
-async function callGroq(key, model, prompt){
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer " + key,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: model,
-      messages: [
-        { role: "system", content: "Você extrai intenção imobiliária em JSON. Não invente dados." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.2,
-      max_tokens: 800
-    })
-  });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error?.message || ("Groq HTTP " + res.status));
-  return (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content || "").trim();
-}
-
 async function extractAI(message){
   const provider = localStorage.getItem("ii_provider") || "local";
   const key = localStorage.getItem("ii_key") || "";
-  if(!key || (provider !== "gemini" && provider !== "groq")) return parseIntent(message);
+  if(provider !== "gemini" || !key) return parseIntent(message);
 
+  // Sempre revalida/descobre modelo antes de gerar
+  const preferred = localStorage.getItem("ii_model") || "";
   const prompt = [
     "Extraia intenção de compra imobiliária em Guarujá. NÃO invente dados.",
     "Mensagem: " + message,
@@ -972,31 +924,15 @@ async function extractAI(message){
     "objetivo (morar|investir), tipo_imovel, orcamento_maximo (número), dormitorios_min,",
     "condominio_max (número), distancia_praia_ambigua (bool), distancia_praia_max_metros,",
     "regioes_preferidas (array de {bairro,peso}), raw_summary."
-  ].join("\n");
-
-  let text = "";
-  if(provider === "groq"){
-    let model = localStorage.getItem("ii_model") || "";
-    try {
-      model = await listGroqModels(key);
-      localStorage.setItem("ii_model", model);
-    } catch(e) {
-      if(!model) throw e;
-    }
-    text = await callGroq(key, model, prompt);
-  } else {
-    const preferred = localStorage.getItem("ii_model") || "";
-    const result = await callGeminiWithFallback(key, preferred, prompt, true);
-    text = result.text;
-  }
-
+  ].join("\\n");
+  const result = await callGeminiWithFallback(key, preferred, prompt, true);
   let j;
   try {
-    j = JSON.parse(text.replace(/^```json\s*/i,"").replace(/```$/,""));
+    j = JSON.parse(result.text.replace(/^```json\\s*/i,"").replace(/```$/,""));
   } catch(e) {
-    const s = text.indexOf("{");
-    const e2 = text.lastIndexOf("}");
-    if(s >= 0 && e2 > s) j = JSON.parse(text.substring(s, e2 + 1));
+    const s = result.text.indexOf("{");
+    const e2 = result.text.lastIndexOf("}");
+    if(s >= 0 && e2 > s) j = JSON.parse(result.text.substring(s, e2 + 1));
     else throw new Error("JSON inválido da IA");
   }
   return Object.assign({}, parseIntent(message), j, { raw_summary: j.raw_summary || message });
@@ -1089,6 +1025,18 @@ function buildCard(rec, tone){
 }
 
 
+
+function addBubble(text, kind){
+  const box = $("#msgs");
+  if(!box) return null;
+  const d = document.createElement("div");
+  d.className = "bubble " + (kind || "bot");
+  d.textContent = text;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  return d;
+}
+
 async function handle(message){
   if(state.busy||!message.trim()) return;
   state.busy=true;
@@ -1175,9 +1123,13 @@ function showChat(){
 $("#btnStart").onclick=()=>{
   const t=$("#startInput").value.trim();
   if(!t){ $("#startInput").focus(); return; }
-  state.intent={}; state.buyerId=null;
+  state.intent={}; state.buyerId=null; state.busy=false;
   $("#msgs").innerHTML=""; $("#results").style.display="none"; $("#results").innerHTML="";
-  showChat(); handle(t);
+  showChat();
+  Promise.resolve(handle(t)).catch(function(e){
+    console.error(e);
+    addBubble("Erro ao iniciar: " + (e && e.message ? e.message : e), "bot");
+  });
 };
 $("#btnBack").onclick=$("#btnHome").onclick=showLanding;
 $("#form").onsubmit=e=>{
@@ -1195,63 +1147,42 @@ $("#startInput").addEventListener("keydown",e=>{
 $("#btnAI").onclick=()=>{
   $("#aiProvider").value=localStorage.getItem("ii_provider")||"local";
   $("#aiKey").value=localStorage.getItem("ii_key")||"";
-  $("#aiModel").value=localStorage.getItem("ii_model")||"";
+  $("#aiModel").value=localStorage.getItem("ii_model")||"gemini-3.1-flash-lite-preview";
   $("#aiModal").classList.add("open");
 };
 $("#closeAI").onclick=()=>$("#aiModal").classList.remove("open");
 $("#saveAI").onclick=()=>{
-  const provider = $("#aiProvider").value;
-  const key = $("#aiKey").value.trim();
-  const model = $("#aiModel").value.trim();
-  localStorage.setItem("ii_provider", provider);
-  localStorage.setItem("ii_key", key);
-  if(model) localStorage.setItem("ii_model", model);
-  else localStorage.removeItem("ii_model");
-  $("#aiStatus").textContent="Salvo. Provedor: "+provider;
+  localStorage.setItem("ii_provider", $("#aiProvider").value);
+  localStorage.setItem("ii_key", $("#aiKey").value.trim());
+  localStorage.setItem("ii_model", $("#aiModel").value.trim()||"gemini-3.1-flash-lite-preview");
+  $("#aiStatus").textContent="Salvo. Provedor: "+$("#aiProvider").value;
   $("#aiStatus").style.color="var(--green)";
 };
 $("#testAI").onclick=async()=>{
   const key=$("#aiKey").value.trim();
-  let provider=$("#aiProvider").value;
-  if(!key){ alert("Cole a API key (Groq gsk_... ou Gemini AIza...)."); return; }
-  // Detecta provedor pela chave se ainda estiver em local
-  if(provider === "local"){
-    if(key.indexOf("gsk_") === 0) provider = "groq";
-    else if(key.indexOf("AIza") === 0) provider = "gemini";
-    $("#aiProvider").value = provider;
-  }
-  if(provider === "local"){ alert("Escolha o provedor: Groq ou Gemini."); return; }
-
+  if(!key){ alert("Cole a API key Gemini."); return; }
   $("#aiStatus").textContent="Descobrindo modelos da sua chave…";
   $("#aiStatus").style.color="var(--yellow)";
   try{
-    localStorage.setItem("ii_provider", provider);
-    localStorage.setItem("ii_key", key);
+    localStorage.setItem("ii_provider","gemini");
+    localStorage.setItem("ii_key",key);
+    // clear stale hard-coded model so discovery wins
     const manual=$("#aiModel").value.trim();
     if(manual) localStorage.setItem("ii_model", manual);
     else localStorage.removeItem("ii_model");
 
-    if(provider === "groq"){
-      const model = await listGroqModels(key);
-      localStorage.setItem("ii_model", model);
-      $("#aiStatus").textContent="Testando Groq: "+model+"…";
-      await extractAI("Quero apartamento no Guarujá até 400 mil 4 quartos");
-      $("#aiModel").value = model;
-      $("#aiStatus").textContent="✓ OK — Groq usando: "+model;
-      $("#aiStatus").style.color="var(--green)";
+    const pick=await pickBestGeminiModel(key, localStorage.getItem("ii_model")||"");
+    if(pick.source==="list" && pick.available.length){
+      $("#aiStatus").textContent="Modelos na chave: "+pick.available.length+" — testando "+pick.model+"…";
     } else {
-      const pick=await pickBestGeminiModel(key, localStorage.getItem("ii_model")||"");
-      if(pick.source==="list" && pick.available.length){
-        $("#aiStatus").textContent="Modelos na chave: "+pick.available.length+" — testando "+pick.model+"…";
-      } else {
-        $("#aiStatus").textContent="Listagem indisponível — tentando aliases…";
-      }
-      await extractAI("Quero apartamento no Guarujá até 400 mil 4 quartos");
-      const used=localStorage.getItem("ii_model")||pick.model||"?";
-      $("#aiModel").value=used;
-      $("#aiStatus").textContent="✓ OK — Gemini usando: "+used;
-      $("#aiStatus").style.color="var(--green)";
+      $("#aiStatus").textContent="Listagem indisponível — tentando aliases: "+(pick.aliases||[]).join(", ");
     }
+
+    const r=await extractAI("Quero apartamento no Guarujá até 400 mil 4 quartos");
+    const used=localStorage.getItem("ii_model")||pick.model||"?";
+    $("#aiModel").value=used;
+    $("#aiStatus").textContent="✓ OK — usando: "+used+(pick.source==="list"?(" ("+pick.available.length+" modelos)"):"");
+    $("#aiStatus").style.color="var(--green)";
   }catch(e){
     $("#aiStatus").textContent="Erro: "+e.message;
     $("#aiStatus").style.color="var(--red)";
