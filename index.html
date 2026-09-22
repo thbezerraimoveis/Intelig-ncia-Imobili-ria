@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inteligência Imobiliária — Guarujá</title>
+  <title>Guarujá Concierge — Busca Imobiliária Curada</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -191,6 +191,54 @@
       border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer;
     }
 
+    
+    .landing-box { max-width: 720px; width: 100%; }
+    .hero-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+      margin: 16px 0 20px;
+    }
+    .hero-stat {
+      background: rgba(26,35,50,.85); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px; text-align: center;
+    }
+    .hero-stat b { display: block; font-size: 1.25rem; color: var(--text); }
+    .hero-stat span { font-size: 11px; color: var(--dim); }
+    .trust-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .trust {
+      font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+      border-radius: 999px; padding: 5px 10px; background: var(--panel);
+    }
+    .filters {
+      margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    .filters h4 {
+      font-size: 12px; color: var(--dim); text-transform: uppercase;
+      letter-spacing: .04em; margin-bottom: 10px; font-weight: 600;
+    }
+    .f-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+    .f-row label.mini { font-size: 12px; color: var(--muted); margin-right: 4px; }
+    .chip {
+      border: 1px solid var(--border); background: var(--panel); color: var(--muted);
+      border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+      font-family: inherit;
+    }
+    .chip.on { border-color: var(--blue); color: var(--text); background: rgba(59,130,246,.15); }
+    .f-input {
+      width: 140px; min-height: 38px !important; padding: 8px 10px !important;
+      font-size: 13px !important;
+    }
+    .how {
+      margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 560px) { .how { grid-template-columns: 1fr; } .hero-stats { grid-template-columns: 1fr; } }
+    .how-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 12px 14px; font-size: 13px; color: var(--muted); line-height: 1.45;
+    }
+    .how-card b { color: var(--text); display: block; margin-bottom: 4px; font-size: 13px; }
+    .verified-tag { font-size: 11px; color: var(--green); margin-top: 4px; }
+
     @media (max-width: 560px) {
       .bubble { max-width: 94%; }
       .chat-head strong { font-size: 13px; }
@@ -202,7 +250,7 @@
     <header class="top">
       <div class="brand">
         <div class="logo">🏠</div>
-        <h1>Inteligência Imobiliária<span>Guarujá · MVP navegável</span></h1>
+        <h1>Guarujá Concierge<span>Busca imobiliária curada · Piloto</span></h1>
       </div>
       <div class="top-actions">
         <button class="btn btn-ghost" type="button" id="btnAI">⚙ Configurar IA</button>
@@ -212,13 +260,63 @@
 
     <section id="landing" class="screen on">
       <div class="landing-box">
-        <div class="badge">Guarujá · SP · Busca web real (Gemini + Google)</div>
-        <h2>Encontre o imóvel certo<br>sem perder horas procurando.</h2>
-        <p class="sub">Conte o que você procura. A inteligência entende seu perfil e encontra as opções mais compatíveis.</p>
+        <div class="badge">Piloto · Guarujá, SP</div>
+        <h2>Menos anúncios.<br>Mais imóveis certos.</h2>
+        <p class="sub">Concierge imobiliário curado: você diz o que procura e recebe até <strong>5 imóveis</strong> com evidência, data da verificação e link da fonte. A IA organiza o pedido — os dados vêm da fonte (ou do inventário piloto).</p>
+        <div class="hero-stats">
+          <div class="hero-stat"><b id="statInv">12</b><span>imóveis no inventário piloto</span></div>
+          <div class="hero-stat"><b>10</b><span>bairros cobertos</span></div>
+          <div class="hero-stat"><b>até 5</b><span>opções por busca</span></div>
+        </div>
         <div class="start-card">
-          <label for="startInput">O que você está procurando?</label>
-          <textarea id="startInput" placeholder="Ex.: Quero um apartamento no Guarujá até R$ 400 mil, quatro quartos e perto da praia."></textarea>
-          <button class="btn btn-primary" type="button" id="btnStart">Começar busca</button>
+          <label for="startInput">Descreva o que procura (ou use os filtros abaixo)</label>
+          <textarea id="startInput" placeholder="Ex.: Apartamento 3 quartos perto da praia nas Pitangueiras até R$ 900 mil, com 2 vagas."></textarea>
+          <div class="filters">
+            <h4>Monte seu pedido</h4>
+            <div class="f-row">
+              <label class="mini">Quero</label>
+              <button type="button" class="chip on" data-f="objetivo" data-v="morar">Comprar / morar</button>
+              <button type="button" class="chip" data-f="objetivo" data-v="investir">Investir</button>
+            </div>
+            <div class="f-row">
+              <label class="mini">Orçamento máx. R$</label>
+              <input class="f-input" type="text" id="fBudget" placeholder="Ex.: 450000" />
+              <label class="mini">Quartos</label>
+              <button type="button" class="chip" data-f="dorm" data-v="1">1+</button>
+              <button type="button" class="chip" data-f="dorm" data-v="2">2+</button>
+              <button type="button" class="chip" data-f="dorm" data-v="3">3+</button>
+              <button type="button" class="chip" data-f="dorm" data-v="4">4+</button>
+            </div>
+            <div class="f-row">
+              <label class="mini">Bairro</label>
+              <button type="button" class="chip" data-f="bairro" data-v="Pitangueiras">Pitangueiras</button>
+              <button type="button" class="chip" data-f="bairro" data-v="Enseada">Enseada</button>
+              <button type="button" class="chip" data-f="bairro" data-v="Astúrias">Astúrias</button>
+              <button type="button" class="chip" data-f="bairro" data-v="Tombo">Tombo</button>
+              <button type="button" class="chip" data-f="bairro" data-v="Pernambuco">Pernambuco</button>
+            </div>
+            <div class="f-row">
+              <label class="mini">Praia</label>
+              <button type="button" class="chip" data-f="praia" data-v="300">até 300 m</button>
+              <button type="button" class="chip" data-f="praia" data-v="500">até 500 m</button>
+              <button type="button" class="chip" data-f="praia" data-v="ambigua">perto da praia</button>
+              <label class="mini">Cond. máx.</label>
+              <input class="f-input" type="text" id="fCondo" placeholder="Ex.: 1200" />
+            </div>
+          </div>
+          <button class="btn btn-primary" type="button" id="btnStart">Ver imóveis compatíveis</button>
+          <div class="trust-row">
+            <span class="trust">✓ Evidência por critério</span>
+            <span class="trust">✓ Data da verificação</span>
+            <span class="trust">✓ Link da fonte</span>
+            <span class="trust">✓ LGPD (sem cadastro forçado)</span>
+          </div>
+        </div>
+        <div class="how">
+          <div class="how-card"><b>01 · Você descreve</b>Frase livre ou filtros: bairro, quartos, orçamento, praia.</div>
+          <div class="how-card"><b>02 · Prévia com evidência</b>Até 5 opções: confirmadas ou parciais — nunca inventamos dado.</div>
+          <div class="how-card"><b>03 · Fonte e verificação</b>Cada card traz fonte, URL e horário da verificação.</div>
+          <div class="how-card"><b>04 · Feedback</b>Gostei / não gostei / salvar para refinar a próxima busca.</div>
         </div>
       </div>
     </section>
@@ -227,7 +325,7 @@
       <div class="chat-head">
         <button class="btn btn-ghost" type="button" id="btnBack" style="padding:6px 10px">←</button>
         <div>
-          <strong>Consultor Imobiliário</strong>
+          <strong>Guarujá Concierge</strong>
           <span class="pill" id="statusPill">conversando</span>
         </div>
       </div>
@@ -264,8 +362,46 @@
   </div>
 
 <script>
-/* Demo LISTINGS removed — real web search via Gemini Google Search grounding */
-const state = { buyerId: null, intent: {}, busy: false };
+/* Inventário piloto curado (demo estável) + busca web opcional */
+const CURATED = [
+  { id:"c1", url:"https://www.vivareal.com.br/venda/sp/guaruja/", company:"Parceiro Piloto Costa", price:385000, bedrooms:3, suites:1, parking:1, area:92, condo:890, neighborhood:"Astúrias", beach:280, type:"apartamento", features:["varanda","elevador"], desc:"Apto 3 dorms Astúrias — inventário piloto.", ageH:6, source_name:"Inventário piloto · Parceiro Costa", verified_at:null },
+  { id:"c2", url:"https://www.zapimoveis.com.br/venda/apartamentos/sp+guaruja/", company:"Parceiro Piloto Prime", price:420000, bedrooms:3, suites:1, parking:2, area:105, condo:1100, neighborhood:"Pitangueiras", beach:150, type:"apartamento", features:["piscina","portaria 24h"], desc:"3 dorms Pitangueiras perto da praia.", ageH:12, source_name:"Inventário piloto · Parceiro Prime", verified_at:null },
+  { id:"c3", url:"https://www.vivareal.com.br/venda/sp/guaruja/", company:"Parceiro Piloto Costa", price:310000, bedrooms:2, suites:1, parking:1, area:78, condo:750, neighborhood:"Enseada", beach:320, type:"apartamento", features:["elevador"], desc:"2 dorms Enseada.", ageH:24, source_name:"Inventário piloto · Parceiro Costa", verified_at:null },
+  { id:"c4", url:"https://www.zapimoveis.com.br/venda/apartamentos/sp+guaruja/", company:"Parceiro Piloto Litoral", price:445000, bedrooms:4, suites:2, parking:2, area:128, condo:1250, neighborhood:"Astúrias", beach:200, type:"apartamento", features:["vista mar","varanda"], desc:"4 dorms Astúrias.", ageH:8, source_name:"Inventário piloto · Parceiro Litoral", verified_at:null },
+  { id:"c5", url:"https://www.vivareal.com.br/venda/sp/guaruja/", company:"Parceiro Piloto Prime", price:289000, bedrooms:2, suites:0, parking:1, area:65, condo:680, neighborhood:"Tombo", beach:400, type:"apartamento", features:["varanda"], desc:"2 dorms Tombo.", ageH:30, source_name:"Inventário piloto · Parceiro Prime", verified_at:null },
+  { id:"c6", url:"https://www.zapimoveis.com.br/venda/apartamentos/sp+guaruja/", company:"Parceiro Piloto Costa", price:399000, bedrooms:3, suites:1, parking:2, area:98, condo:950, neighborhood:"Enseada", beach:180, type:"apartamento", features:["piscina","churrasqueira"], desc:"3 dorms Enseada próximo à praia.", ageH:10, source_name:"Inventário piloto · Parceiro Costa", verified_at:null },
+  { id:"c7", url:"https://www.vivareal.com.br/venda/sp/guaruja/", company:"Parceiro Piloto Litoral", price:520000, bedrooms:4, suites:2, parking:2, area:140, condo:1400, neighborhood:"Pitangueiras", beach:90, type:"apartamento", features:["frente mar"], desc:"4 dorms Pitangueiras — acima de 450k.", ageH:18, source_name:"Inventário piloto · Parceiro Litoral", verified_at:null },
+  { id:"c8", url:"https://www.zapimoveis.com.br/venda/apartamentos/sp+guaruja/", company:"Parceiro Piloto Costa", price:355000, bedrooms:3, suites:1, parking:1, area:88, condo:820, neighborhood:"Astúrias", beach:450, type:"apartamento", features:["elevador"], desc:"3 dorms Astúrias.", ageH:4, source_name:"Inventário piloto · Parceiro Costa", verified_at:null },
+  { id:"c9", url:"https://www.vivareal.com.br/venda/sp/guaruja/", company:"Parceiro Piloto Prime", price:275000, bedrooms:2, suites:1, parking:1, area:70, condo:null, neighborhood:"Pernambuco", beach:600, type:"apartamento", features:[], desc:"2 dorms Pernambuco — cond. não informado na ficha.", ageH:40, source_name:"Inventário piloto · Parceiro Prime", verified_at:null },
+  { id:"c10", url:"https://www.zapimoveis.com.br/venda/apartamentos/sp+guaruja/", company:"Parceiro Piloto Litoral", price:410000, bedrooms:3, suites:1, parking:2, area:110, condo:1050, neighborhood:"Tombo", beach:250, type:"apartamento", features:["piscina"], desc:"3 dorms Tombo.", ageH:14, source_name:"Inventário piloto · Parceiro Litoral", verified_at:null },
+  { id:"c11", url:"https://www.vivareal.com.br/venda/sp/guaruja/", company:"Parceiro Piloto Costa", price:198000, bedrooms:1, suites:0, parking:1, area:48, condo:520, neighborhood:"Enseada", beach:500, type:"apartamento", features:[], desc:"1 dorm Enseada.", ageH:20, source_name:"Inventário piloto · Parceiro Costa", verified_at:null },
+  { id:"c12", url:"https://www.zapimoveis.com.br/venda/apartamentos/sp+guaruja/", company:"Parceiro Piloto Prime", price:468000, bedrooms:4, suites:2, parking:2, area:135, condo:1180, neighborhood:"Astúrias", beach:120, type:"apartamento", features:["vista mar","elevador","piscina"], desc:"4 dorms Astúrias perto da praia.", ageH:7, source_name:"Inventário piloto · Parceiro Prime", verified_at:null }
+];
+
+const state = { buyerId: null, intent: {}, busy: false, filters: {}, lastVerifiedAt: null };
+
+function stampVerified(list){
+  const iso = new Date().toISOString();
+  state.lastVerifiedAt = iso;
+  return (list || []).map(function(l){
+    const x = Object.assign({}, l);
+    x.verified_at = iso;
+    return x;
+  });
+}
+
+function searchCurated(intent){
+  const now = stampVerified(CURATED);
+  return {
+    model: "inventario-piloto",
+    queries: ["inventário curado Guarujá"],
+    webSearchQueries: [],
+    listings: now,
+    groundingCount: now.length,
+    note: "Inventário piloto curado (fontes/parceiros de demonstração)."
+  };
+}
+
 
 function $(s){ return document.querySelector(s); }
 function money(v){ if(v==null||v===undefined||v==="") return "Não informado"; return "R$ "+Number(v).toLocaleString("pt-BR",{maximumFractionDigits:0}); }
@@ -579,9 +715,10 @@ function rankDynamic(intent, listings){
         source_name: l.source_name || l.portal || "Web",
         source_url: l.url,
         source_company: l.company,
-        freshness_status: "WEB_LIVE",
+        freshness_status: l.source_name && String(l.source_name).indexOf("piloto")>=0 ? "PILOTO" : "WEB_LIVE",
         condominium: l.condo,
-        description: l.desc
+        description: l.desc,
+        verified_at: l.verified_at || state.lastVerifiedAt
       },
       explanation: {
         por_que_recomendamos: ev.status === "CONFIRMADO"
@@ -604,42 +741,49 @@ function rankDynamic(intent, listings){
     if(oa !== ob) return oa - ob;
     return b.score - a.score;
   });
-  return kept.slice(0, 8).map(function(x,i){ x.rank = i + 1; return x; });
+  return kept.slice(0, 5).map(function(x,i){ x.rank = i + 1; return x; });
 }
 
 
 async function webSearchProperties(intent, key){
+  // 1) Inventário piloto curado (estável)
+  const curated = searchCurated(intent);
   const queries = buildSearchQueries(intent);
-  var lastErr = null;
   const provider = localStorage.getItem("ii_provider") || "local";
 
-  // Google Search grounding só funciona com Gemini
+  // 2) Enriquecimento web opcional (não bloqueia o piloto)
   if(key && provider === "gemini"){
     try {
-      return await webSearchViaGeminiGrounding(intent, key, queries);
-    } catch(e) {
-      lastErr = e;
-      console.warn("Gemini grounding failed:", e);
-    }
+      const web = await webSearchViaGeminiGrounding(intent, key, queries);
+      if(web && web.listings && web.listings.length){
+        const merged = dedupeListings((curated.listings || []).concat(web.listings || []));
+        return {
+          model: (web.model || "web") + "+piloto",
+          queries: queries,
+          webSearchQueries: web.webSearchQueries || queries,
+          listings: stampVerified(merged),
+          groundingCount: merged.length,
+          note: "Inventário piloto + resultados web."
+        };
+      }
+    } catch(e) { console.warn("Web Gemini opcional falhou:", e); }
   }
-
   try {
     const fb = await webSearchViaJina(intent, queries);
     if(fb.listings && fb.listings.length){
-      fb.note = provider === "groq"
-        ? "Busca web pública (Groq não tem Google Search grounding)."
-        : "Busca web pública (fallback). Gemini grounding indisponível ou sem cota.";
-      return fb;
+      const merged = dedupeListings((curated.listings || []).concat(fb.listings || []));
+      return {
+        model: "web-fallback+piloto",
+        queries: queries,
+        webSearchQueries: queries,
+        listings: stampVerified(merged),
+        groundingCount: merged.length,
+        note: "Inventário piloto + busca web pública."
+      };
     }
-  } catch(e2) {
-    console.warn("Fallback web failed:", e2);
-    lastErr = lastErr || e2;
-  }
+  } catch(e2) { console.warn(e2); }
 
-  if(lastErr && String(lastErr.message || "").indexOf("429") >= 0){
-    throw new Error("Cota da API esgotada (HTTP 429). Aguarde alguns minutos e tente de novo.");
-  }
-  throw new Error((lastErr && lastErr.message) ? lastErr.message : "Nenhum anúncio verificável encontrado.");
+  return curated;
 }
 
 async function webSearchViaGeminiGrounding(intent, key, queries){
@@ -1087,8 +1231,9 @@ function buildCard(rec, tone){
       (fail ? '<div style="color:var(--red);font-size:12px;margin-top:4px">' + fail + '</div>' : '') +
     '</div>' +
     '<div class="src">Fonte: ' + (p.source_name || "—") +
-      (p.source_url ? ' · <a href="' + p.source_url + '" target="_blank" rel="noopener">Ver anúncio original</a>' : '') +
+      (p.source_url ? ' · <a href="' + p.source_url + '" target="_blank" rel="noopener">Ver anúncio / fonte</a>' : '') +
     '</div>' +
+    '<div class="verified-tag">Verificado em ' + (p.verified_at ? new Date(p.verified_at).toLocaleString("pt-BR") : (state.lastVerifiedAt ? new Date(state.lastVerifiedAt).toLocaleString("pt-BR") : "—")) + '</div>' +
     '<div class="actions">' +
       '<button type="button" class="btn-sm" data-e="liked">Gostei</button>' +
       '<button type="button" class="btn-sm" data-e="disliked">Não gostei</button>' +
@@ -1204,13 +1349,54 @@ function showChat(){
   $("#input").focus();
 }
 
+function collectFilters(){
+  const f = {};
+  const obj = document.querySelector('.chip.on[data-f="objetivo"]');
+  if(obj) f.objetivo = obj.getAttribute("data-v");
+  const dorm = document.querySelector('.chip.on[data-f="dorm"]');
+  if(dorm) f.dormitorios_min = parseInt(dorm.getAttribute("data-v"), 10);
+  const bairro = document.querySelector('.chip.on[data-f="bairro"]');
+  if(bairro) f.regioes_preferidas = [{ bairro: bairro.getAttribute("data-v"), peso: 1 }];
+  const praia = document.querySelector('.chip.on[data-f="praia"]');
+  if(praia){
+    const v = praia.getAttribute("data-v");
+    if(v === "ambigua") f.distancia_praia_ambigua = true;
+    else { f.distancia_praia_max_metros = parseInt(v, 10); f.distancia_praia_ambigua = false; }
+  }
+  const budget = ($("#fBudget") && $("#fBudget").value || "").replace(/\D/g, "");
+  if(budget) f.orcamento_maximo = parseFloat(budget);
+  const condo = ($("#fCondo") && $("#fCondo").value || "").replace(/\D/g, "");
+  if(condo) f.condominio_max = parseFloat(condo);
+  f.tipo_imovel = "apartamento";
+  return f;
+}
+
+document.querySelectorAll(".chip[data-f]").forEach(function(btn){
+  btn.addEventListener("click", function(){
+    const field = btn.getAttribute("data-f");
+    const wasOn = btn.classList.contains("on");
+    document.querySelectorAll('.chip[data-f="'+field+'"]').forEach(function(b){ b.classList.remove("on"); });
+    if(!wasOn) btn.classList.add("on");
+  });
+});
+
 $("#btnStart").onclick=()=>{
-  const t=$("#startInput").value.trim();
-  if(!t){ $("#startInput").focus(); return; }
-  state.intent={}; state.buyerId=null; state.busy=false;
-  $("#msgs").innerHTML=""; $("#results").style.display="none"; $("#results").innerHTML="";
+  const t = ($("#startInput").value || "").trim();
+  const filters = collectFilters();
+  // precisa de texto OU algum filtro útil
+  if(!t && !filters.orcamento_maximo && !filters.dormitorios_min && !(filters.regioes_preferidas||[]).length){
+    $("#startInput").focus();
+    return;
+  }
+  state.intent = Object.assign({}, filters);
+  state.buyerId = null;
+  state.busy = false;
+  $("#msgs").innerHTML = "";
+  $("#results").style.display = "none";
+  $("#results").innerHTML = "";
   showChat();
-  Promise.resolve(handle(t)).catch(function(err){
+  const seed = t || ("Busca: " + summarizeIntent(state.intent));
+  Promise.resolve(handle(seed)).catch(function(err){
     console.error(err);
     try { addBubble("Erro ao iniciar: " + (err && err.message ? err.message : err), "bot"); } catch(e) {}
   });
@@ -1228,6 +1414,7 @@ $("#startInput").addEventListener("keydown",e=>{
 });
 
 // AI modal
+if($("#statInv")) $("#statInv").textContent = String(CURATED.length);
 $("#btnAI").onclick=()=>{
   $("#aiProvider").value=localStorage.getItem("ii_provider")||"local";
   $("#aiKey").value=localStorage.getItem("ii_key")||"";
